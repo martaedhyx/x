@@ -116,7 +116,7 @@ select{border:1px solid var(--bd);background:var(--chip);color:var(--fg);border-
 
 <script>
 /* ==== PASANG API KEY GEMINI GRATIS ANDA DI SINI (sekali saja) ==== */
-const API_KEY = "AQ.Ab8RN6JKluncnxk5vjKHz_zmhCA8Z4E99C_JR1JxSJMfR-GJCA";
+const API_KEY = ""; // API key jangan ditanam di HTML publik; masukkan melalui tombol API key.
 /* Buat gratis: https://aistudio.google.com/apikey  — batasi key ke domain situs Anda (HTTP referrer). */
 
 const $ = id => document.getElementById(id);
@@ -127,7 +127,7 @@ window.addEventListener('error', e => note('Error skrip: ' + e.message));
 window.addEventListener('unhandledrejection', e => note('Error: ' + (e.reason?.message || e.reason)));
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const MODELS = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-3.7-flash'];
+const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
 const FILTERS = [
   ['Semua Web', ''], ['YouTube', 'site:youtube.com'], ['TikTok', 'site:tiktok.com'], ['GitHub', 'site:github.com'],
   ['Reddit', 'site:reddit.com'], ['X / Twitter', 'site:x.com OR site:twitter.com'], ['Instagram', 'site:instagram.com'],
@@ -144,7 +144,7 @@ const store = {
   get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }
 };
-const key = () => API_KEY || store.get('edhy_key');
+const key = () => store.get('edhy_key') || API_KEY;
 if (window.marked) marked.use({ gfm: true, breaks: true });
 
 /* ---------- Ikon bot (mata selalu bergerak) ---------- */
@@ -174,10 +174,17 @@ $('ms').onclick = async () => {
   const k = $('ikey').value.trim(); if (!k) { $('mmsg').textContent = 'Isi dulu key-nya.'; return; }
   $('mmsg').textContent = 'Menguji koneksi...';
   try {
-    const r = await fetch(BASE + '/models?pageSize=1', { headers: { 'x-goog-api-key': k } });
-    if (!r.ok) { const d = await r.json().catch(() => ({})); $('mmsg').textContent = '❌ ' + (d.error?.message || 'Gagal (HTTP ' + r.status + ')'); return; }
+    const r = await fetch(BASE + '/models?pageSize=100', { headers: { 'x-goog-api-key': k } });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('mmsg').textContent = '❌ ' + (d.error?.message || 'Gagal (HTTP ' + r.status + ')'); return; }
+    const available = (d.models || []).filter(m => m.supportedGenerationMethods?.includes('generateContent')).map(m => m.name.replace(/^models\\//, ''));
+    const chosen = MODELS.find(m => available.includes(m));
+    if (!chosen) { $('mmsg').textContent = '❌ Key valid, tetapi model Gemini yang didukung aplikasi tidak tersedia. Periksa project/API di Google AI Studio.'; return; }
+    const test = await fetch(BASE + '/models/' + chosen + ':generateContent', { method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':k}, body:JSON.stringify({contents:[{role:'user',parts:[{text:'Balas hanya: Tes berhasil'}]}]}) });
+    const td = await test.json().catch(() => ({}));
+    if (!test.ok) { $('mmsg').textContent = '❌ Key terbaca, tetapi tes AI gagal: ' + (td.error?.message || 'HTTP '+test.status); return; }
   } catch (e) { $('mmsg').textContent = '❌ Tidak bisa menjangkau server Google (' + e.message + '). Periksa internet/VPN/pemblokir.'; return; }
-  store.set('edhy_key', k); status(); $('mmsg').textContent = '✅ Terhubung. Key tersimpan.'; setTimeout(() => modal(false), 700);
+  store.set('edhy_key', k); status(); $('mmsg').textContent = '✅ Tes AI berhasil. Key tersimpan di browser ini.'; setTimeout(() => modal(false), 900);
 };
 
 /* ---------- Gambar ---------- */
@@ -293,29 +300,30 @@ async function callGemini() {
   let last = { s: 0, m: '' };
   for (const m of MODELS) {
     let res;
-    for (let i = 0; i < 3; i++) {
+    try {
       res = await post(m, body);
-      if (![429, 503].includes(res.status) || i === 2) break;
-      await sleep(1500 * (i + 1));
+    } catch (e) {
+      if (e.net) throw e;
+      throw new Error('Gagal menghubungi Gemini: ' + e.message);
     }
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       if (data.promptFeedback?.blockReason) throw new Error('Permintaan diblokir: ' + data.promptFeedback.blockReason);
       const c = data.candidates?.[0];
       const text = (c?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join('');
-      if (!text) throw new Error('Respons kosong dari server' + (c?.finishReason ? ` (${c.finishReason})` : '') + '. Coba ulangi.');
+      if (!text) throw new Error('Respons kosong dari Gemini' + (c?.finishReason ? ' (' + c.finishReason + ')' : '') + '. Coba ulangi.');
       return { text, meta: c.groundingMetadata || null };
     }
     last = { s: res.status, m: data.error?.message || '' };
-    if (![404, 429, 503].includes(res.status)) break;
+    // Try the next model only if this model name is unavailable or the feature is unsupported.
+    if (![400, 404].includes(res.status) || !/model|google_search|tool|not supported|not found/i.test(last.m)) break;
   }
-  if (last.s === 400 && /API key/i.test(last.m)) { store.set('edhy_key', ''); status(); throw new Error('API key tidak valid. Klik "Atur API key" di kanan atas.'); }
-  if (last.s === 401) throw new Error('API key ditolak (401). Buat key baru di aistudio.google.com/apikey lalu ganti isi API_KEY, atau pastikan Gemini API aktif di project key tersebut. ' + last.m);
-  if (last.s === 403) throw new Error('API key ditolak. Jika key dibatasi domain, pastikan domain situs ini diizinkan. ' + last.m);
-  if (last.s === 429) throw new Error('Kuota gratis habis atau belum aktif untuk project key ini. Coba lagi nanti, atau buat key di project baru. ' + last.m);
-  throw new Error(last.m || `Gagal terhubung ke API Gemini (${last.s}).`);
+  if (last.s === 400 && /API key/i.test(last.m)) { store.set('edhy_key', ''); status(); throw new Error('API key tidak valid. Klik status API key di kanan atas untuk memasukkan key yang valid.'); }
+  if (last.s === 401) throw new Error('API key ditolak (401). Buat/ganti key di Google AI Studio dan pastikan Gemini API aktif. ' + last.m);
+  if (last.s === 403) throw new Error('Akses API ditolak. Periksa pembatasan key, project, dan apakah Gemini API aktif. ' + last.m);
+  if (last.s === 429) throw new Error('Google Gemini menolak permintaan karena kuota/rate limit project ini habis atau belum aktif. Aplikasi sudah mencoba model yang didukung; menukar nama model tidak menghilangkan batas kuota. ' + last.m);
+  throw new Error(last.m || 'Gagal terhubung ke API Gemini (HTTP ' + last.s + ').');
 }
-
 async function callClaude() {
   const m2 = history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts.map(p => p.inlineData ? { type: 'image', source: { type: 'base64', media_type: p.inlineData.mimeType, data: p.inlineData.data } } : { type: 'text', text: p.text }) }));
   const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM, messages: m2, tools: [{ type: 'web_search_20250305', name: 'web_search' }] }) });
@@ -337,12 +345,7 @@ async function callClaude() {
   return { text, shown, meta: { groundingChunks: src, webSearchQueries: qs }, eng: 'Claude (mode pratinjau)' };
 }
 async function ask() {
-  try { return await callGemini(); }
-  catch (e) {
-    if (!e.net) throw e;
-    try { return await callClaude(); }
-    catch (e2) { throw new Error(e.message + ' (Mesin cadangan Claude juga gagal: ' + e2.message + ')'); }
-  }
+  return callGemini();
 }
 
 async function send() {
