@@ -136,7 +136,7 @@ const FILTERS = [
   ['Marketplace', 'site:tokopedia.com OR site:shopee.co.id OR site:amazon.com OR site:aliexpress.com'],
   ['Berita', 'berita terbaru dari media berita kredibel']
 ];
-const SYSTEM = "Kamu adalah Edhy Robot, asisten pencari yang menelusuri seluruh internet. Untuk pertanyaan faktual atau terkini, selalu pakai pencarian web (beberapa query bila perlu) dan jawab berdasarkan hasilnya. Jawab dalam bahasa pengguna, ringkas, terstruktur, format Markdown. Jangan mengarang URL. Tulis URL YouTube asli agar jadi pemutar. Jika pengguna mengirim gambar: baca gambar (objek, merek, teks/OCR, tempat, produk, tanaman/hewan, karya), buat kata kunci dari hasil analisis, cari di web, lalu berikan: (1) apa yang terlihat, (2) daftar halaman/produk/lokasi/gambar yang mirip beserta tautan, (3) sumber asli bila ditemukan. Jangan mengidentifikasi orang dari wajahnya; cukup deskripsikan dan cari berdasarkan konteks atau teks pada gambar. Jika tidak ada hasil, katakan terus terang.";
+const SYSTEM = "Kamu adalah Edhy Robot, asisten AI yang bernalar, mencari web, dan menggunakan alat saat relevan. Untuk pertanyaan faktual/terkini gunakan Google Search grounding; sebutkan sumber dan jangan mengarang URL. Untuk tugas yang meminta tindakan, gunakan alat yang tersedia jika cocok: kalkulator untuk hitungan, buat file teks jika diminta membuat/menyimpan dokumen, dan buka URL hanya jika pengguna secara jelas memintanya. Jangan mengklaim tindakan selesai jika alat gagal. Minta klarifikasi sebelum tindakan yang berisiko atau ambigu. Jawab dalam bahasa pengguna, ringkas dan terstruktur dalam Markdown. Tulis URL YouTube asli agar jadi pemutar. Jika pengguna mengirim gambar: deskripsikan objek/teks/konteks lalu cari hal terkait di web. Jangan mengidentifikasi orang dari wajahnya. Jika tidak ada hasil, katakan terus terang.";
 const DEFAULT_IMG = "Analisis gambar ini lalu cari di internet semua data yang mirip atau terkait: sumber asli, produk, tempat, dan halaman serupa, lengkap dengan tautan.";
 const YT = /(?:youtube\.com\/(?:watch\?(?:\S*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/;
 
@@ -295,34 +295,99 @@ async function post(model, body) {
     catch (e) { throw Object.assign(new Error('Koneksi keluar ke server Gemini diblokir (' + e.message + '). Biasanya karena file dibuka di dalam pratinjau aplikasi Claude: buka lewat hosting web atau Safari/Chrome, atau cek internet/VPN.'), { net: true }); }
   }
 }
-async function callGemini() {
-  const body = JSON.stringify({ contents: history, tools: [{ google_search: {} }], systemInstruction: { parts: [{ text: SYSTEM }] } });
-  let last = { s: 0, m: '' };
-  for (const m of MODELS) {
-    let res;
+async function runAgentTool(name, args) {
+  if (name === 'calculate') {
+    const expr = String(args.expression || '').trim();
+    if (!expr || expr.length > 120 || !/^[0-9+*/().,%\s-]+$/.test(expr)) return { ok:false, error:'Ekspresi hitung tidak valid.' };
     try {
-      res = await post(m, body);
-    } catch (e) {
-      if (e.net) throw e;
-      throw new Error('Gagal menghubungi Gemini: ' + e.message);
-    }
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      if (data.promptFeedback?.blockReason) throw new Error('Permintaan diblokir: ' + data.promptFeedback.blockReason);
-      const c = data.candidates?.[0];
-      const text = (c?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join('');
-      if (!text) throw new Error('Respons kosong dari Gemini' + (c?.finishReason ? ' (' + c.finishReason + ')' : '') + '. Coba ulangi.');
-      return { text, meta: c.groundingMetadata || null };
-    }
-    last = { s: res.status, m: data.error?.message || '' };
-    // Try the next model only if this model name is unavailable or the feature is unsupported.
-    if (![400, 404].includes(res.status) || !/model|google_search|tool|not supported|not found/i.test(last.m)) break;
+      // Parser sederhana: hanya angka dan operator matematika yang diizinkan.
+      const tokens = expr.match(/\d+(?:\.\d+)?|[()+*/%\-]|,/g);
+      if (!tokens || tokens.join('').replace(/,/g,'') !== expr.replace(/\s/g,'').replace(/,/g,'')) return { ok:false, error:'Ekspresi tidak dapat diproses.' };
+      const normalized = expr.replace(/,/g,'');
+      if (!/^[0-9+*/().%\s-]+$/.test(normalized)) return { ok:false, error:'Ekspresi tidak valid.' };
+      const value = Function('"use strict"; return (' + normalized + ')')();
+      if (typeof value !== 'number' || !Number.isFinite(value)) return { ok:false, error:'Hasil bukan angka yang valid.' };
+      return { ok:true, expression:expr, result:value };
+    } catch { return { ok:false, error:'Format perhitungan tidak valid.' }; }
   }
-  if (last.s === 400 && /API key/i.test(last.m)) { store.set('edhy_key', ''); status(); throw new Error('API key tidak valid. Klik status API key di kanan atas untuk memasukkan key yang valid.'); }
-  if (last.s === 401) throw new Error('API key ditolak (401). Buat/ganti key di Google AI Studio dan pastikan Gemini API aktif. ' + last.m);
-  if (last.s === 403) throw new Error('Akses API ditolak. Periksa pembatasan key, project, dan apakah Gemini API aktif. ' + last.m);
-  if (last.s === 429) throw new Error('Google Gemini menolak permintaan karena kuota/rate limit project ini habis atau belum aktif. Aplikasi sudah mencoba model yang didukung; menukar nama model tidak menghilangkan batas kuota. ' + last.m);
-  throw new Error(last.m || 'Gagal terhubung ke API Gemini (HTTP ' + last.s + ').');
+  if (name === 'create_text_file') {
+    const filename = String(args.filename || 'dokumen-edhy.txt').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80) || 'dokumen-edhy.txt';
+    const content = String(args.content || '');
+    if (!content.trim()) return { ok:false, error:'Isi file kosong.' };
+    if (content.length > 200000) return { ok:false, error:'File terlalu besar (maksimum 200 KB).' };
+    const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=filename; a.style.display='none';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
+    return { ok:true, message:'File dibuat dan unduhan dimulai.', filename, characters:content.length };
+  }
+  if (name === 'open_web_url') {
+    let u;
+    try { u = new URL(String(args.url || '')); } catch { return { ok:false, error:'URL tidak valid.' }; }
+    if (!['https:','http:'].includes(u.protocol)) return { ok:false, error:'Hanya URL HTTP/HTTPS yang diizinkan.' };
+    if (!args.user_requested) return { ok:false, error:'URL hanya boleh dibuka jika pengguna secara jelas meminta membuka tautan.' };
+    const w = window.open(u.href, '_blank', 'noopener,noreferrer');
+    return w ? { ok:true, message:'Tautan dibuka.', url:u.href } : { ok:false, error:'Browser memblokir pop-up. Tampilkan tautan agar pengguna bisa membukanya sendiri.', url:u.href };
+  }
+  if (name === 'get_local_time') return { ok:true, time:new Date().toLocaleString('id-ID',{dateStyle:'full',timeStyle:'medium'}) };
+  return { ok:false, error:'Alat tidak dikenal.' };
+}
+const AGENT_FUNCTIONS = [
+  {name:'calculate',description:'Hitung ekspresi matematika sederhana. Gunakan untuk hitungan numerik.',parameters:{type:'OBJECT',properties:{expression:{type:'STRING',description:'Ekspresi matematika, misalnya (125000*3)-5000'}},required:['expression']}},
+  {name:'create_text_file',description:'Buat dan unduh file teks ketika pengguna meminta dokumen/file yang bisa disimpan.',parameters:{type:'OBJECT',properties:{filename:{type:'STRING',description:'Nama file dengan ekstensi .txt'},content:{type:'STRING',description:'Isi lengkap file teks'}},required:['filename','content']}},
+  {name:'open_web_url',description:'Buka URL HTTP/HTTPS di tab baru hanya jika pengguna secara eksplisit meminta tautan dibuka. Set user_requested true hanya jika permintaan eksplisit.',parameters:{type:'OBJECT',properties:{url:{type:'STRING'},user_requested:{type:'BOOLEAN'}},required:['url','user_requested']}},
+  {name:'get_local_time',description:'Dapatkan tanggal dan waktu lokal perangkat pengguna.',parameters:{type:'OBJECT',properties:{},required:[]}}
+];
+async function callGemini() {
+  let contents = history.slice();
+  let last = { s: 0, m: '' };
+  for (const model of MODELS) {
+    contents = history.slice();
+    let meta = null;
+    for (let turn = 0; turn < 5; turn++) {
+      const body = JSON.stringify({
+        contents,
+        tools: [{google_search:{}},{function_declarations:AGENT_FUNCTIONS}],
+        systemInstruction:{parts:[{text:SYSTEM}]},
+        toolConfig:{functionCallingConfig:{mode:'AUTO'}}
+      });
+      let res;
+      try { res = await post(model, body); }
+      catch(e) { if(e.net) throw e; throw new Error('Gagal menghubungi Gemini: '+e.message); }
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) {
+        last = {s:res.status,m:data.error?.message||''};
+        if ([400,404].includes(res.status) && /model|google_search|function|tool|not supported|not found/i.test(last.m)) break;
+        if (last.s===400 && /API key/i.test(last.m)) {store.set('edhy_key','');status();throw new Error('API key tidak valid. Klik status API key di kanan atas untuk memasukkan key yang valid.');}
+        if (last.s===401) throw new Error('API key ditolak (401). Buat/ganti key di Google AI Studio dan pastikan Gemini API aktif. '+last.m);
+        if (last.s===403) throw new Error('Akses API ditolak. Periksa pembatasan key, project, dan apakah Gemini API aktif. '+last.m);
+        if (last.s===429) throw new Error('Kuota/rate limit Gemini habis atau belum aktif. '+last.m);
+        throw new Error(last.m||'Gagal terhubung ke Gemini (HTTP '+last.s+').');
+      }
+      if(data.promptFeedback?.blockReason) throw new Error('Permintaan diblokir: '+data.promptFeedback.blockReason);
+      const candidate=data.candidates?.[0], parts=candidate?.content?.parts||[];
+      meta=candidate?.groundingMetadata||meta;
+      const calls=parts.filter(p=>p.functionCall?.name);
+      if(calls.length) {
+        contents.push({role:'model',parts});
+        const responses=[];
+        for(const part of calls) {
+          const fc=part.functionCall;
+          let result;
+          try { result=await runAgentTool(fc.name,fc.args||{}); }
+          catch(e) { result={ok:false,error:e.message||'Alat gagal dijalankan.'}; }
+          responses.push({functionResponse:{name:fc.name,response:{result}}});
+        }
+        contents.push({role:'function',parts:responses});
+        continue;
+      }
+      const answer=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+      if(!answer) throw new Error('Respons kosong dari Gemini'+(candidate?.finishReason?' ('+candidate.finishReason+')':'')+'. Coba ulangi.');
+      return {text:answer,meta};
+    }
+    if (![400,404].includes(last.s) || !/model|google_search|function|tool|not supported|not found/i.test(last.m)) break;
+  }
+  throw new Error(last.m||'Model Gemini yang tersedia tidak mendukung kombinasi pencarian web dan alat agen ini. Periksa model/API yang aktif di Google AI Studio.');
 }
 async function callClaude() {
   const m2 = history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts.map(p => p.inlineData ? { type: 'image', source: { type: 'base64', media_type: p.inlineData.mimeType, data: p.inlineData.data } } : { type: 'text', text: p.text }) }));
