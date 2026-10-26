@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edhy Robot</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.7/purify.min.js"></script>
+<style>
+:root{--bg:#000;--fg:#fff;--mut:#9a9a9a;--card:#0d0d0d;--bd:#262626;--chip:#171717;--lk:#8ab4ff;--px:0;--py:0;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;overflow:hidden}
+.serif{font-family:Georgia,"Times New Roman",serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd)}
+.logo{display:flex;align-items:center;gap:10px;font-size:19px}
+.ib{border:0;background:none;color:var(--mut);padding:8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px}
+.ib:hover{background:var(--chip);color:var(--fg)}
+.ib svg{width:20px;height:20px}
+#dot{width:8px;height:8px;border-radius:50%;background:#f59e0b}
+#scroll{flex:1;overflow-y:auto}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+#hero{text-align:center;padding-top:12vh}
+#hero h1{font-weight:400;font-size:clamp(26px,5vw,38px);margin:14px 0 10px}
+#hero p{color:var(--mut);margin:0}
+#msgs{display:flex;flex-direction:column;gap:22px;padding:16px 0 24px}
+.u{align-self:flex-end;max-width:85%;background:var(--chip);border:1px solid var(--bd);border-radius:18px;padding:10px 16px;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+.u .imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.u img{height:90px;border-radius:10px}
+.u a{font-size:12px;color:var(--lk)}
+.bm{display:flex;gap:12px}
+.av{flex:none;margin-top:2px}
+.b{line-height:1.65;font-size:16px;min-width:0;flex:1;overflow-wrap:anywhere}
+.md p{margin:0 0 .8em}.md p:last-child{margin:0}
+.md a{color:var(--lk);text-underline-offset:2px}
+.md a.cite{font-size:.7em;vertical-align:super;text-decoration:none;margin-left:2px}
+.md img{max-width:100%;border-radius:10px}
+.md code{background:var(--chip);padding:.15em .4em;border-radius:6px;font-size:.88em}
+.md pre{background:var(--chip);border:1px solid var(--bd);padding:14px;border-radius:12px;overflow-x:auto}.md pre code{padding:0;background:none}
+.md ul{list-style:disc;margin:0 0 1em 1.4em;padding:0}.md ol{list-style:decimal;margin:0 0 1em 1.4em;padding:0}
+.md h1,.md h2,.md h3{font-family:Georgia,serif;font-weight:600;margin:1em 0 .4em}
+.md table{border-collapse:collapse;display:block;overflow-x:auto}.md td,.md th{border:1px solid var(--bd);padding:5px 10px}
+.yt{aspect-ratio:16/9;width:100%;margin:12px 0;border-radius:12px;overflow:hidden;background:#000}
+.yt iframe{width:100%;height:100%;border:0}
+.lbl{font-size:12px;color:var(--mut);margin:12px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:5px 12px;border-radius:99px;background:var(--chip);border:1px solid var(--bd);color:var(--fg);text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip:hover{background:var(--bd)}
+.ld{color:var(--mut);display:flex;gap:12px;align-items:center}
+.err{color:#fca5a5}
+footer{padding:0 0 18px}
+.composer{background:var(--card);border:1px solid var(--bd);border-radius:22px;padding:10px 12px}
+.composer:focus-within{border-color:#666}
+textarea{width:100%;border:0;outline:0;resize:none;background:none;color:var(--fg);font:inherit;font-size:16px;max-height:160px;padding:6px 4px}
+textarea::placeholder{color:#6b6b6b}
+.row{display:flex;align-items:center;gap:6px}.row .gap{flex:1}
+select{border:1px solid var(--bd);background:var(--chip);color:var(--fg);border-radius:99px;padding:6px 10px;font-size:13px;max-width:45%}
+.send{border:0;background:#fff;color:#000;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.send svg{width:18px;height:18px}
+.send:disabled{opacity:.3;cursor:default}
+#prev{display:none;gap:8px;padding:2px 4px 8px;flex-wrap:wrap}
+.th{position:relative}.th img{height:64px;border-radius:10px;display:block}
+.th button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:#fff;color:#000;cursor:pointer;line-height:1}
+.drop{outline:2px dashed #fff;outline-offset:-8px}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+#modal[hidden]{display:none}
+.mc{width:100%;max-width:420px;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.mc h3{margin:0;font-weight:600}.mc p{margin:0;font-size:13px;color:var(--mut)}
+.mc input{background:var(--chip);border:1px solid var(--bd);border-radius:10px;color:var(--fg);padding:10px 12px;font-size:15px;outline:0}
+.mb{display:flex;gap:8px;justify-content:flex-end}
+.mb button{border:1px solid var(--bd);background:var(--chip);color:var(--fg);padding:8px 16px;border-radius:10px;cursor:pointer}
+.mb #ms{background:#fff;color:#000;border-color:#fff}
+/* Ikon bot: mata selalu bergerak + berkedip */
+.pu{transform:translate(calc(var(--px)*1px),calc(var(--py)*1px));transition:transform .28s cubic-bezier(.3,1.4,.5,1)}
+.eye{transform-box:fill-box;transform-origin:center;animation:bl 3.6s infinite}
+.ant{animation:pl 1.6s ease-in-out infinite}
+.bot{animation:bob 3s ease-in-out infinite}
+@keyframes bl{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.08)}}
+@keyframes pl{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo serif"><span id="hlogo"></span>Edhy Robot</span>
+  <div>
+    <button id="bkey" class="ib" title="API key"><span id="dot"></span><span id="stx"></span></button>
+    <button id="bnew" class="ib" title="Chat baru"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg></button>
+  </div>
+</header>
+<main id="scroll"><div class="wrap">
+  <div id="hero"><span id="hbig"></span><h1 class="serif">Apa yang ingin Anda cari hari ini?</h1><p>Cari di seluruh web, atau unggah foto untuk menemukan sumber dan hasil yang mirip.</p></div>
+  <div id="msgs"></div>
+</div></main>
+<footer><div class="wrap">
+  <div class="composer">
+    <div id="prev"></div>
+    <textarea id="inp" rows="1" placeholder="Tanyakan sesuatu, atau tempel/unggah foto..."></textarea>
+    <div class="row">
+      <button id="battach" class="ib" title="Unggah foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+      <select id="flt" title="Filter sumber"></select>
+      <span class="gap"></span>
+      <button id="bsend" class="send" disabled title="Kirim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7M12 19V5"/></svg></button>
+    </div>
+  </div>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+</div></footer>
+
+<div id="modal" hidden><div class="mc">
+  <h3>API key Gemini</h3>
+  <input id="ikey" type="password" placeholder="AIza..." autocomplete="off">
+  <p id="mmsg">Gratis di aistudio.google.com/apikey. Key disimpan di browser ini.</p>
+  <div class="mb"><button id="mc">Tutup</button><button id="ms">Tes &amp; simpan</button></div>
+</div></div>
+
+<script>
+/* ==== PASANG API KEY GEMINI GRATIS ANDA DI SINI (sekali saja) ==== */
+const API_KEY = "AQ.Ab8RN6JKluncnxk5vjKHz_zmhCA8Z4E99C_JR1JxSJMfR-GJCA";
+/* Buat gratis: https://aistudio.google.com/apikey  — batasi key ke domain situs Anda (HTTP referrer). */
+
+const $ = id => document.getElementById(id);
+const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h) e.innerHTML = h; return e; };
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function note(m) { const d = el('div', 'b err'); d.textContent = '⚠️ ' + m; const x = $('msgs'); if (x) x.append(d); }
+window.addEventListener('error', e => note('Error skrip: ' + e.message));
+window.addEventListener('unhandledrejection', e => note('Error: ' + (e.reason?.message || e.reason)));
+
+const BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const MODELS = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-3.7-flash'];
+const FILTERS = [
+  ['Semua Web', ''], ['YouTube', 'site:youtube.com'], ['TikTok', 'site:tiktok.com'], ['GitHub', 'site:github.com'],
+  ['Reddit', 'site:reddit.com'], ['X / Twitter', 'site:x.com OR site:twitter.com'], ['Instagram', 'site:instagram.com'],
+  ['Wikipedia', 'site:wikipedia.org'], ['Stack Overflow', 'site:stackoverflow.com'],
+  ['Jurnal', 'site:scholar.google.com OR site:arxiv.org OR site:researchgate.net'],
+  ['Marketplace', 'site:tokopedia.com OR site:shopee.co.id OR site:amazon.com OR site:aliexpress.com'],
+  ['Berita', 'berita terbaru dari media berita kredibel']
+];
+const SYSTEM = "Kamu adalah Edhy Robot, asisten pencari yang menelusuri seluruh internet. Untuk pertanyaan faktual atau terkini, selalu pakai pencarian web (beberapa query bila perlu) dan jawab berdasarkan hasilnya. Jawab dalam bahasa pengguna, ringkas, terstruktur, format Markdown. Jangan mengarang URL. Tulis URL YouTube asli agar jadi pemutar. Jika pengguna mengirim gambar: baca gambar (objek, merek, teks/OCR, tempat, produk, tanaman/hewan, karya), buat kata kunci dari hasil analisis, cari di web, lalu berikan: (1) apa yang terlihat, (2) daftar halaman/produk/lokasi/gambar yang mirip beserta tautan, (3) sumber asli bila ditemukan. Jangan mengidentifikasi orang dari wajahnya; cukup deskripsikan dan cari berdasarkan konteks atau teks pada gambar. Jika tidak ada hasil, katakan terus terang.";
+const DEFAULT_IMG = "Analisis gambar ini lalu cari di internet semua data yang mirip atau terkait: sumber asli, produk, tempat, dan halaman serupa, lengkap dengan tautan.";
+const YT = /(?:youtube\.com\/(?:watch\?(?:\S*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/;
+
+const store = {
+  get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }
+};
+const key = () => API_KEY || store.get('edhy_key');
+if (window.marked) marked.use({ gfm: true, breaks: true });
+
+/* ---------- Ikon bot (mata selalu bergerak) ---------- */
+const BOT = (s = 32) => `<svg class="bot" width="${s}" height="${s}" viewBox="0 0 64 64" fill="none"><line x1="32" y1="14" x2="32" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="5.5" r="3" fill="#fff"/><rect x="3" y="27" width="5" height="14" rx="2.5" fill="#fff"/><rect x="56" y="27" width="5" height="14" rx="2.5" fill="#fff"/><rect x="9" y="14" width="46" height="40" rx="15" fill="#0b0b0b" stroke="#fff" stroke-width="2.5"/><g class="eye"><circle cx="23" cy="33" r="8" fill="#fff"/><circle class="pu" cx="23" cy="33" r="3.6" fill="#000"/></g><g class="eye"><circle cx="41" cy="33" r="8" fill="#fff"/><circle class="pu" cx="41" cy="33" r="3.6" fill="#000"/></g><path d="M26 46.5q6 4 12 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+$('hlogo').innerHTML = BOT(34); $('hbig').innerHTML = BOT(88);
+
+let history = [], pending = [], busy = false;
+const msgs = $('msgs'), inp = $('inp'), bsend = $('bsend'), prev = $('prev'), scroll = $('scroll');
+
+(function look() {
+  const a = Math.random() * 6.283, r = Math.random() < .2 ? 0 : Math.random() * 4, s = document.documentElement.style;
+  s.setProperty('--px', (Math.cos(a) * r).toFixed(2)); s.setProperty('--py', (Math.sin(a) * r * .8).toFixed(2));
+  setTimeout(look, (busy ? 220 : 420) + Math.random() * 900);
+})();
+
+FILTERS.forEach(([l, v]) => { const o = el('option'); o.textContent = l; o.value = v; $('flt').append(o); });
+const upd = () => { bsend.disabled = busy || (!inp.value.trim() && !pending.length); };
+const down = () => { scroll.scrollTop = scroll.scrollHeight; };
+function status() { const k = !!key(); $('dot').style.background = k ? '#22c55e' : '#f59e0b'; $('stx').textContent = k ? 'Key terpasang' : 'Atur API key'; }
+status();
+
+/* ---------- Modal API key ---------- */
+const modal = open => { $('modal').hidden = !open; if (open) { $('ikey').value = key(); $('mmsg').textContent = 'Gratis di aistudio.google.com/apikey. Key disimpan di browser ini.'; $('ikey').focus(); } };
+$('bkey').onclick = () => modal(true);
+$('mc').onclick = () => modal(false);
+$('ms').onclick = async () => {
+  const k = $('ikey').value.trim(); if (!k) { $('mmsg').textContent = 'Isi dulu key-nya.'; return; }
+  $('mmsg').textContent = 'Menguji koneksi...';
+  try {
+    const r = await fetch(BASE + '/models?pageSize=1', { headers: { 'x-goog-api-key': k } });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); $('mmsg').textContent = '❌ ' + (d.error?.message || 'Gagal (HTTP ' + r.status + ')'); return; }
+  } catch (e) { $('mmsg').textContent = '❌ Tidak bisa menjangkau server Google (' + e.message + '). Periksa internet/VPN/pemblokir.'; return; }
+  store.set('edhy_key', k); status(); $('mmsg').textContent = '✅ Terhubung. Key tersimpan.'; setTimeout(() => modal(false), 700);
+};
+
+/* ---------- Gambar ---------- */
+function toImg(file) {
+  return new Promise((ok, no) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, 1280 / Math.max(im.width, im.height)), c = el('canvas');
+      c.width = im.width * s; c.height = im.height * s;
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/jpeg', .85); URL.revokeObjectURL(u);
+      ok({ mime: 'image/jpeg', data: url.split(',')[1], url });
+    };
+    im.onerror = () => no(); im.src = u;
+  });
+}
+function rp() {
+  prev.innerHTML = '';
+  pending.forEach((p, i) => {
+    const d = el('div', 'th'), im = el('img'), x = el('button', '', '×');
+    im.src = p.url; x.onclick = () => { pending.splice(i, 1); rp(); upd(); };
+    d.append(im, x); prev.append(d);
+  });
+  prev.style.display = pending.length ? 'flex' : 'none';
+}
+async function addFiles(fs) {
+  for (const f of fs) { if (f.type.startsWith('image/') && pending.length < 4) { try { pending.push(await toImg(f)); } catch {} } }
+  rp(); upd();
+}
+$('battach').onclick = () => $('file').click();
+$('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+document.addEventListener('paste', e => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length) { e.preventDefault(); addFiles(fs); } });
+document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('drop'); });
+document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('drop'); });
+document.addEventListener('drop', e => { e.preventDefault(); document.body.classList.remove('drop'); addFiles(e.dataTransfer.files); });
+
+/* ---------- Render ---------- */
+function cite(text, meta) {
+  const ch = meta?.groundingChunks || [], sp = meta?.groundingSupports || [];
+  if (!ch.length || !sp.length) return text;
+  const enc = new TextEncoder(), dec = new TextDecoder(), b = enc.encode(text), ins = {};
+  sp.forEach(s => {
+    const e = s.segment?.endIndex; if (!e) return;
+    const m = (s.groundingChunkIndices || []).filter(i => ch[i]?.web?.uri).map(i => `<a class="cite" href="${ch[i].web.uri}">[${i + 1}]</a>`).join('');
+    if (m) ins[e] = (ins[e] || '') + m;
+  });
+  let out = '', pv = 0;
+  Object.keys(ins).map(Number).sort((a, c) => a - c).forEach(p => {
+    if (p > b.length) return;
+    let q = p; while (q > pv && (b[q - 1] === 10 || b[q - 1] === 32)) q--;
+    out += dec.decode(b.slice(pv, q)) + ins[p]; pv = q;
+  });
+  return out + dec.decode(b.slice(pv));
+}
+function render(text, meta) {
+  const box = el('div');
+  if (window.marked && window.DOMPurify) box.innerHTML = DOMPurify.sanitize(marked.parse(cite(text, meta)));
+  else box.innerHTML = esc(text.replace(/<a class="cite"[^>]*>(\[\d+\])<\/a>/g, '$1')).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/\n/g, '<br>');
+  const seen = new Set();
+  box.querySelectorAll('a').forEach(a => {
+    a.target = '_blank'; a.rel = 'noopener noreferrer';
+    const m = a.href.match(YT);
+    if (m && !seen.has(m[1])) {
+      seen.add(m[1]);
+      const w = el('div', 'yt', `<iframe src="https://www.youtube.com/embed/${m[1]}" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`);
+      (a.closest('p,li') || a).after(w);
+    }
+  });
+  return box;
+}
+function extras(meta) {
+  const w = el('div');
+  const mk = (label, items) => {
+    w.append(el('div', 'lbl', label));
+    const r = el('div', 'chips');
+    items.forEach(([href, txt]) => { const a = el('a', 'chip'); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = txt; r.append(a); });
+    w.append(r);
+  };
+  const srcs = (meta?.groundingChunks || []).map((c, i) => [c.web, i]).filter(x => x[0]?.uri);
+  if (srcs.length) mk('Sumber', srcs.map(([s, i]) => [s.uri, `[${i + 1}] ${s.title || 'Sumber'}`]));
+  const qs = meta?.webSearchQueries || [];
+  if (qs.length) mk('Pencarian yang dilakukan', qs.map(q => ['https://www.google.com/search?q=' + encodeURIComponent(q), '🔎 ' + q]));
+  return w;
+}
+function addUser(t, imgs) {
+  const d = el('div', 'u');
+  if (imgs.length) { const g = el('div', 'imgs'); imgs.forEach(i => { const im = el('img'); im.src = i.url; g.append(im); }); d.append(g); }
+  if (t) d.append(document.createTextNode(t));
+  if (imgs.length) { const a = el('a'); a.href = 'https://lens.google.com/'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Buka Google Lens ↗'; d.append(el('br'), a); }
+  msgs.append(d); down();
+}
+function addBot(r, isErr) {
+  const row = el('div', 'bm'), av = el('div', 'av', BOT(28)), d = el('div', 'b' + (isErr ? ' err' : ''));
+  const md = el('div', 'md'); md.append(...render(r.shown || r.text, r.meta).childNodes); d.append(md);
+  const ex = extras(r.meta); if (ex.children.length) d.append(ex);
+  if (r.eng) d.append(el('div', 'lbl', 'Mesin: ' + r.eng));
+  row.append(av, d); msgs.append(row); down();
+}
+function addLoading() { const d = el('div', 'ld', BOT(28) + '<span>Mencari dan berpikir...</span>'); msgs.append(d); down(); return d; }
+
+/* ---------- Gemini ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function post(model, body) {
+  const url = `${BASE}/models/${model}:generateContent`;
+  try { return await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key() }, body }); }
+  catch {
+    try { return await fetch(`${url}?key=${encodeURIComponent(key())}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
+    catch (e) { throw Object.assign(new Error('Koneksi keluar ke server Gemini diblokir (' + e.message + '). Biasanya karena file dibuka di dalam pratinjau aplikasi Claude: buka lewat hosting web atau Safari/Chrome, atau cek internet/VPN.'), { net: true }); }
+  }
+}
+async function callGemini() {
+  const body = JSON.stringify({ contents: history, tools: [{ google_search: {} }], systemInstruction: { parts: [{ text: SYSTEM }] } });
+  let last = { s: 0, m: '' };
+  for (const m of MODELS) {
+    let res;
+    for (let i = 0; i < 3; i++) {
+      res = await post(m, body);
+      if (![429, 503].includes(res.status) || i === 2) break;
+      await sleep(1500 * (i + 1));
+    }
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      if (data.promptFeedback?.blockReason) throw new Error('Permintaan diblokir: ' + data.promptFeedback.blockReason);
+      const c = data.candidates?.[0];
+      const text = (c?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join('');
+      if (!text) throw new Error('Respons kosong dari server' + (c?.finishReason ? ` (${c.finishReason})` : '') + '. Coba ulangi.');
+      return { text, meta: c.groundingMetadata || null };
+    }
+    last = { s: res.status, m: data.error?.message || '' };
+    if (![404, 429, 503].includes(res.status)) break;
+  }
+  if (last.s === 400 && /API key/i.test(last.m)) { store.set('edhy_key', ''); status(); throw new Error('API key tidak valid. Klik "Atur API key" di kanan atas.'); }
+  if (last.s === 401) throw new Error('API key ditolak (401). Buat key baru di aistudio.google.com/apikey lalu ganti isi API_KEY, atau pastikan Gemini API aktif di project key tersebut. ' + last.m);
+  if (last.s === 403) throw new Error('API key ditolak. Jika key dibatasi domain, pastikan domain situs ini diizinkan. ' + last.m);
+  if (last.s === 429) throw new Error('Kuota gratis habis atau belum aktif untuk project key ini. Coba lagi nanti, atau buat key di project baru. ' + last.m);
+  throw new Error(last.m || `Gagal terhubung ke API Gemini (${last.s}).`);
+}
+
+async function callClaude() {
+  const m2 = history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts.map(p => p.inlineData ? { type: 'image', source: { type: 'base64', media_type: p.inlineData.mimeType, data: p.inlineData.data } } : { type: 'text', text: p.text }) }));
+  const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM, messages: m2, tools: [{ type: 'web_search_20250305', name: 'web_search' }] }) });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.error?.message || 'HTTP ' + res.status);
+  const src = [], qs = [];
+  const idx = (u, t) => { let i = src.findIndex(s => s.web.uri === u); if (i < 0) { i = src.length; src.push({ web: { uri: u, title: '' } }); } if (t && !src[i].web.title) src[i].web.title = t; return i; };
+  (d.content || []).forEach(b => {
+    if (b.type === 'server_tool_use' && b.input?.query) qs.push(b.input.query);
+    if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) b.content.forEach(r => { if (r.url) idx(r.url, r.title); });
+  });
+  let text = '', shown = '';
+  (d.content || []).forEach(b => {
+    if (b.type !== 'text') return;
+    text += b.text;
+    shown += b.text + (b.citations || []).filter(c => c.url).map(c => `<a class="cite" href="${c.url}">[${idx(c.url, c.title) + 1}]</a>`).join('');
+  });
+  if (!text) throw new Error('respons kosong');
+  return { text, shown, meta: { groundingChunks: src, webSearchQueries: qs }, eng: 'Claude (mode pratinjau)' };
+}
+async function ask() {
+  try { return await callGemini(); }
+  catch (e) {
+    if (!e.net) throw e;
+    try { return await callClaude(); }
+    catch (e2) { throw new Error(e.message + ' (Mesin cadangan Claude juga gagal: ' + e2.message + ')'); }
+  }
+}
+
+async function send() {
+  if (busy) return;
+  const raw = inp.value.trim(), imgs = pending.slice();
+  if (!raw && !imgs.length) return;
+  if (!key()) { modal(true); return; }
+  inp.value = ''; inp.style.height = 'auto'; pending = []; rp();
+  $('hero').style.display = 'none';
+  addUser(raw, imgs);
+  const f = $('flt').value;
+  let t = raw || DEFAULT_IMG;
+  if (f) t += `\n\n[Filter pencarian aktif: ${f}. Terapkan pada setiap query pencarian (pakai operator site: bila ada) dan utamakan hasil dari sumber ini.]`;
+  history.push({ role: 'user', parts: [...imgs.map(i => ({ inlineData: { mimeType: i.mime, data: i.data } })), { text: t }] });
+  busy = true; upd();
+  const ld = addLoading();
+  try {
+    const r = await ask();
+    ld.remove(); addBot(r); history.push({ role: 'model', parts: [{ text: r.text }] });
+  } catch (e) {
+    ld.remove(); history.pop(); inp.value = raw; pending = imgs; rp();
+    addBot({ text: e.message }, true);
+  } finally { busy = false; upd(); inp.focus(); }
+}
+
+inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; upd(); });
+inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+bsend.onclick = send;
+$('bnew').onclick = () => { if (busy) return; history = []; msgs.innerHTML = ''; $('hero').style.display = ''; };
+if (!key()) setTimeout(() => modal(true), 400);
+</script>
+</body>
+</html>
