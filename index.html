@@ -197,6 +197,8 @@ input, textarea{font-size:16px!important}
 /* Pengaturan disembunyikan sementara; tombol dan fiturnya tetap ada */
 #settingsBtn{display:none!important}
 
+/* Perkecil hanya teks status proses: berpikir, mencari web, menganalisis, dan menulis */
+.msg.bot.typing > span{font-size:12px!important;line-height:1.35!important}
 </style>
 </head>
 <body>
@@ -496,8 +498,7 @@ input, textarea{font-size:16px!important}
           })();
         } else { s.innerHTML = md(p.text); enhanceMarkdown(s); }
       }
-      else if (p.inlineData){
-        var src = 'data:' + p.inlineData.mimeType + ';base64,' + p.inlineData.data;
+      else if (p.inlineData){        var src = 'data:' + p.inlineData.mimeType + ';base64,' + p.inlineData.data;
         var im = el('img','gen'); im.src = src; im.alt = 'Gambar buatan bot'; d.appendChild(im);
         var a = el('a','copy','Simpan gambar'); a.href = src; a.download = 'gambar-martaedhyx.png'; a.style.color = 'inherit'; d.appendChild(a);
       }
