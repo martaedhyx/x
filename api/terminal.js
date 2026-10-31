@@ -81,14 +81,14 @@ export default async function handler(req, res) {
     const sandbox = await Sandbox.connect(session.id);
     const marker = "__EDHY_CWD_" + randomUUID().replace(/-/g, "") + "__";
     const safeCwd = String(session.cwd || "/home/user").replace(/'/g, "'\\''");
-    const wrapped = "cd '" + safeCwd + "' || exit $?; {\\n" + command + "\\n}; printf '\\\\n" + marker + "%s\\\\n' \"$PWD\"";
+    const wrapped = "cd '" + safeCwd + "' || exit $?; { " + command + " ; }; printf '\\n" + marker + "%s\\n' \"$PWD\"";
     const result = await sandbox.commands.run(wrapped, { timeoutMs: 12000 });
     let stdout = String(result.stdout || "");
     const markerAt = stdout.lastIndexOf(marker);
     if (markerAt >= 0) {
-      const path = stdout.slice(markerAt + marker.length).trim().split(/\\r?\\n/)[0];
+      const path = stdout.slice(markerAt + marker.length).trim().split(/\r?\n/)[0];
       if (path.startsWith("/")) session.cwd = path.slice(0, 500);
-      stdout = stdout.slice(0, markerAt).replace(/\\n$/, "");
+      stdout = stdout.slice(0, markerAt).replace(/\n$/, "");
     }
     session.count += 1;
     return res.status(200).json({
