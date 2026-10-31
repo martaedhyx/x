@@ -265,8 +265,8 @@ input, textarea{font-size:17.6px!important}
   <label for="key">API key Gemini<span>Dibuat di aistudio.google.com. Disimpan hanya di browser ini.</span></label>
   <input id="key" type="password" autocomplete="off" placeholder="AIza...">
   <label for="model">Model<span>Untuk akun gratis, pakai model Flash atau Flash-Lite.</span></label>
-  <input id="model" list="models" placeholder="gemini-3.1-flash-lite">
-  <datalist id="models"><option value="gemini-3.1-flash-lite"><option value="gemini-3-flash-preview"></datalist>
+  <input id="model" list="models" placeholder="gemini-3.8-flash">
+  <datalist id="models"><option value="gemini-3.8-flash"><option value="gemini-3.6-flash"><option value="gemini-3.5-flash-lite"></datalist>
   <label for="imgmodel">Model gambar<span>Dipakai di "Buat gambar". Model gambar sering butuh akun berbayar.</span></label>
   <input id="imgmodel" list="imgmodels" placeholder="gemini-3.1-flash-image">
   <datalist id="imgmodels"><option value="gemini-3.1-flash-image"><option value="gemini-3.1-flash-lite-image"></datalist>
@@ -289,7 +289,7 @@ input, textarea{font-size:17.6px!important}
 <script>
 (function(){
   var DEFAULTS = {
-    model: 'gemini-3.1-flash-lite',
+    model: 'gemini-3.8-flash',
     sys: 'Kamu asisten yang ramah dan membantu. Jawab dalam bahasa yang dipakai pengguna, singkat dan jelas.'
   };
   var $ = function(id){ return document.getElementById(id); };
