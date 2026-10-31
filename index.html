@@ -823,46 +823,6 @@ input, textarea{font-size:16px!important}
   // Pengaturan API tidak dibuka otomatis agar sapaan langsung terlihat saat halaman dimuat.
 })();
 </script>
-<script>
-(function(){
-  var orig = window.fetch.bind(window);
-  var API = 'generativelanguage.googleapis.com';
-  var BACKUP = 'gemini-3.1-flash-lite';
-  function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
-  function swap(u, m){ return u.replace(/models\/[^:/?]+/, 'models/' + encodeURIComponent(m)); }
-  window.fetch = async function(url, opts){
-    if (typeof url !== 'string' || url.indexOf(API) < 0) return orig(url, opts);
-    var model = BACKUP;
-    try { model = localStorage.getItem('gem_model') || BACKUP; } catch(e){}
-    var m = url.match(/models\/([^:/?]+)/);
-    var used = m ? decodeURIComponent(m[1]) : '';
-    var isImg = /image/.test(used);
-    // 1. Jangan pernah pakai model 2.5 lama (sudah dimatikan Google)
-    if (/^gemini-2\.5/.test(used)){ url = swap(url, model); used = model; }
-    var res = await orig(url, opts);
-    // 2. Coba ulang 2x kalau server sibuk
-    for (var i = 0; i < 2 && (res.status === 500 || res.status === 503); i++){
-      await sleep(1500 * (i + 1));
-      res = await orig(url, opts);
-    }
-    // 3. Pindah ke model cadangan kalau masih sibuk atau model tidak ditemukan
-    if ((res.status === 503 || res.status === 404) && !isImg && used !== BACKUP){
-      url = swap(url, BACKUP);
-      res = await orig(url, opts);
-    }
-    // 4. Kalau pencarian web ditolak, jawab tanpa web
-    if (!res.ok && [400,403,429].indexOf(res.status) >= 0 && !isImg && opts && typeof opts.body === 'string'){
-      try {
-        var b = JSON.parse(opts.body);
-        if (b.tools){
-          delete b.tools; delete b.toolConfig;
-          res = await orig(url, Object.assign({}, opts, { body: JSON.stringify(b) }));
-        }
-      } catch(e){}
-    }
-    return res;
-  };
-})();
-</script>
+<script src="./patch.js?v=2"></script>
 </body>
 </html>
