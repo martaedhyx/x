@@ -1,446 +1,827 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edhy Robot</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.7/purify.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="application-name" content="EdhyX">
+<meta name="apple-mobile-web-app-title" content="EdhyX">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>martaedhyx</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='black'/%3E%3Ccircle cx='50' cy='50' r='40' fill='white'/%3E%3Crect x='30.5' y='31' width='9' height='28' rx='4.5'/%3E%3Crect x='60.5' y='31' width='9' height='28' rx='4.5'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#000;--fg:#fff;--mut:#9a9a9a;--card:#0d0d0d;--bd:#262626;--chip:#171717;--lk:#8ab4ff;--px:0;--py:0;color-scheme:dark}
+:root{
+  --bg:#000000; --side:#000000; --panel:#0d0d0d; --ink:#ffffff; --muted:rgba(255,255,255,.62); --line:#2e2e2e;
+  --accent:#ffffff; --accent-ink:#000000; --user:#1a1a1a; --code:#141414; --err:#ff6b6b; --hover:#1c1c1c;
+  --serif: ui-serif, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;overflow:hidden}
-.serif{font-family:Georgia,"Times New Roman",serif}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd)}
-.logo{display:flex;align-items:center;gap:10px;font-size:19px}
-.ib{border:0;background:none;color:var(--mut);padding:8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px}
-.ib:hover{background:var(--chip);color:var(--fg)}
-.ib svg{width:20px;height:20px}
-#dot{width:8px;height:8px;border-radius:50%;background:#f59e0b}
-#scroll{flex:1;overflow-y:auto}
-.wrap{max-width:720px;margin:0 auto;padding:0 16px}
-#hero{text-align:center;padding-top:12vh}
-#hero h1{font-weight:400;font-size:clamp(26px,5vw,38px);margin:14px 0 10px}
-#hero p{color:var(--mut);margin:0}
-#msgs{display:flex;flex-direction:column;gap:22px;padding:16px 0 24px}
-.u{align-self:flex-end;max-width:85%;background:var(--chip);border:1px solid var(--bd);border-radius:18px;padding:10px 16px;white-space:pre-wrap;word-break:break-word;line-height:1.5}
-.u .imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.u img{height:90px;border-radius:10px}
-.u a{font-size:12px;color:var(--lk)}
-.bm{display:flex;gap:12px}
-.av{flex:none;margin-top:2px}
-.b{line-height:1.65;font-size:16px;min-width:0;flex:1;overflow-wrap:anywhere}
-.md p{margin:0 0 .8em}.md p:last-child{margin:0}
-.md a{color:var(--lk);text-underline-offset:2px}
-.md a.cite{font-size:.7em;vertical-align:super;text-decoration:none;margin-left:2px}
-.md img{max-width:100%;border-radius:10px}
-.md code{background:var(--chip);padding:.15em .4em;border-radius:6px;font-size:.88em}
-.md pre{background:var(--chip);border:1px solid var(--bd);padding:14px;border-radius:12px;overflow-x:auto}.md pre code{padding:0;background:none}
-.md ul{list-style:disc;margin:0 0 1em 1.4em;padding:0}.md ol{list-style:decimal;margin:0 0 1em 1.4em;padding:0}
-.md h1,.md h2,.md h3{font-family:Georgia,serif;font-weight:600;margin:1em 0 .4em}
-.md table{border-collapse:collapse;display:block;overflow-x:auto}.md td,.md th{border:1px solid var(--bd);padding:5px 10px}
-.yt{aspect-ratio:16/9;width:100%;margin:12px 0;border-radius:12px;overflow:hidden;background:#000}
-.yt iframe{width:100%;height:100%;border:0}
-.lbl{font-size:12px;color:var(--mut);margin:12px 0 6px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:12px;padding:5px 12px;border-radius:99px;background:var(--chip);border:1px solid var(--bd);color:var(--fg);text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chip:hover{background:var(--bd)}
-.ld{color:var(--mut);display:flex;gap:12px;align-items:center}
-.err{color:#fca5a5}
-footer{padding:0 0 18px}
-.composer{background:var(--card);border:1px solid var(--bd);border-radius:22px;padding:10px 12px}
-.composer:focus-within{border-color:#666}
-textarea{width:100%;border:0;outline:0;resize:none;background:none;color:var(--fg);font:inherit;font-size:16px;max-height:160px;padding:6px 4px}
-textarea::placeholder{color:#6b6b6b}
-.row{display:flex;align-items:center;gap:6px}.row .gap{flex:1}
-select{border:1px solid var(--bd);background:var(--chip);color:var(--fg);border-radius:99px;padding:6px 10px;font-size:13px;max-width:45%}
-.send{border:0;background:#fff;color:#000;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.send svg{width:18px;height:18px}
-.send:disabled{opacity:.3;cursor:default}
-#prev{display:none;gap:8px;padding:2px 4px 8px;flex-wrap:wrap}
-.th{position:relative}.th img{height:64px;border-radius:10px;display:block}
-.th button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:#fff;color:#000;cursor:pointer;line-height:1}
-.drop{outline:2px dashed #fff;outline-offset:-8px}
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
-#modal[hidden]{display:none}
-.mc{width:100%;max-width:420px;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}
-.mc h3{margin:0;font-weight:600}.mc p{margin:0;font-size:13px;color:var(--mut)}
-.mc input{background:var(--chip);border:1px solid var(--bd);border-radius:10px;color:var(--fg);padding:10px 12px;font-size:15px;outline:0}
-.mb{display:flex;gap:8px;justify-content:flex-end}
-.mb button{border:1px solid var(--bd);background:var(--chip);color:var(--fg);padding:8px 16px;border-radius:10px;cursor:pointer}
-.mb #ms{background:#fff;color:#000;border-color:#fff}
-/* Ikon bot: mata selalu bergerak + berkedip */
-.pu{transform:translate(calc(var(--px)*1px),calc(var(--py)*1px));transition:transform .28s cubic-bezier(.3,1.4,.5,1)}
-.eye{transform-box:fill-box;transform-origin:center;animation:bl 3.6s infinite}
-.ant{animation:pl 1.6s ease-in-out infinite}
-.bot{animation:bob 3s ease-in-out infinite}
-@keyframes bl{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.08)}}
-@keyframes pl{0%,100%{opacity:.25}50%{opacity:1}}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
-@keyframes r{to{transform:rotate(360deg)}}
+html,body{height:100%;margin:0}@supports (height:100dvh){html,body{height:100dvh}}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);display:flex;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Sidebar */
+#side{width:288px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:30}
+.brand{display:flex;align-items:center;gap:10px;font:600 21px var(--serif);padding:6px 10px 14px}
+.newbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;font-weight:600;color:var(--accent)}
+.newbtn:hover,.ci:hover,.foot:hover{background:var(--hover)}
+.newbtn i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:18px;line-height:1}
+.lbl{color:var(--muted);font-size:13px;padding:16px 10px 6px}
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+#list li{display:flex;align-items:center;border-radius:10px}
+#list li.on{background:var(--hover)}
+.ci{flex:1;min-width:0;text-align:left;padding:8px 10px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.del{color:var(--muted);padding:6px 10px;border-radius:8px;opacity:.7}
+.del:hover{color:var(--err);opacity:1}
+.foot{display:block;width:100%;text-align:left;padding:10px;border-radius:10px;margin-top:8px}
+.none{color:var(--muted);font-size:14px;padding:6px 10px}
+#scrim{display:none}
+
+/* Main */
+main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:100%}
+.top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px}
+#menuBtn{display:none;padding:8px;border-radius:10px;font-size:27px;line-height:1}
+#menuBtn:hover{background:var(--hover)}
+#title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#modelLabel{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap}
+#chat{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px 16px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;min-height:100%}
+.hello{margin:auto;text-align:center;padding:40px 0}
+.hello svg{display:block;margin:0 auto 20px}
+.hello h1{font:400 clamp(28px,6vw,40px)/1.2 var(--serif);margin:0 0 8px;height:2.4em;display:flex;align-items:center;justify-content:center}
+.hello p{margin:0;color:var(--muted)}
+
+.msg.user{align-self:flex-end;max-width:85%;background:var(--user);padding:10px 16px;border-radius:18px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.bot{align-self:stretch;font:17px/1.65 var(--serif);overflow-wrap:anywhere}
+.msg.bot p{margin:0 0 .8em}
+.msg.bot h2,.msg.bot h3,.msg.bot h4{font-family:var(--serif);margin:1em 0 .4em;line-height:1.3}
+.msg.bot h2{font-size:1.3em}.msg.bot h3{font-size:1.15em}.msg.bot h4{font-size:1.05em}
+.msg.bot ul,.msg.bot ol{margin:0 0 .8em;padding-left:1.4em}
+.msg.bot li{margin:.2em 0}
+.msg.bot pre{background:var(--code);border:1px solid var(--line);padding:12px;border-radius:10px;overflow-x:auto;margin:.8em 0;font:13.5px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.msg.bot code{background:var(--code);padding:1px 5px;border-radius:5px;font:.88em ui-monospace,Menlo,Consolas,monospace}
+.msg.bot pre code{background:none;padding:0;font-size:inherit}.msg.bot a.md-link{color:#eee;text-decoration-line:underline;text-decoration-style:dotted;text-decoration-color:#aaa;text-underline-offset:4px;overflow-wrap:anywhere}.msg.bot .site-icon{width:14px;height:14px;object-fit:contain;vertical-align:-2px;margin-right:5px;border-radius:3px}.msg.bot .task{list-style:none;margin-left:-1.4em}.msg.bot .task input{accent-color:#22c55e;width:14px;height:14px;vertical-align:-2px;margin-right:7px}.msg.bot pre{position:relative;padding:38px 12px 12px;background:#101318;border:1px solid #30343b;border-radius:10px;overflow-x:auto}.msg.bot .code-lang{position:absolute;top:9px;left:12px;color:#aeb7c4;font-size:11px}.msg.bot .code-copy{position:absolute;top:5px;right:7px;border:1px solid #424852;border-radius:6px;padding:3px 7px;font-size:11px}
+.msg.err{align-self:stretch;color:var(--ink);border:1px solid var(--err);border-radius:12px;padding:10px 14px;font-size:15px}
+.copy{color:var(--muted);font-size:13px;padding:2px 8px;margin-left:-8px;border-radius:8px}
+.copy:hover{background:var(--hover)}
+.typing{color:var(--muted);font-style:italic;font-size:12px}
+@media (prefers-reduced-motion: no-preference){ .typing{animation:pulse 1.5s ease-in-out infinite} @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}} }
+
+/* Input */
+.dock{padding:8px 16px calc(14px + env(safe-area-inset-bottom,0px))}
+.box{max-width:720px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:10px;display:flex;align-items:flex-end;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.box:focus-within{border-color:var(--accent)}
+.box textarea{flex:1;resize:none;border:0;background:none;color:var(--ink);font:16px/1.5 var(--sans);padding:6px 0;max-height:160px;outline:none}
+#sendBtn{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex-shrink:0}
+#sendBtn:disabled{opacity:.4;cursor:default}
+.box{position:relative}
+#plusBtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:22px;line-height:1;flex-shrink:0;color:var(--ink)}
+#plusBtn:hover{background:var(--hover)}
+#menu{display:none;position:absolute;left:8px;bottom:calc(100% + 8px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:230px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+#menu.on{display:block}
+#menu button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:10px}
+#menu button:hover{background:var(--hover)}
+#chips{max-width:720px;margin:0 auto 8px;display:flex;flex-wrap:wrap;gap:8px}
+#chips:empty{display:none}
+.chip{display:flex;align-items:center;gap:8px;background:var(--user);border:1px solid var(--line);border-radius:12px;padding:4px 6px 4px 8px;font-size:14px;max-width:100%}
+.chip.mode{border-color:var(--accent)}
+.chip img{width:32px;height:32px;object-fit:cover;border-radius:6px}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.chip button{padding:0 6px;font-size:18px;color:var(--muted)}
+.thumb{display:block;max-width:220px;max-height:220px;border-radius:12px;margin-bottom:8px}
+.file{font-size:14px;margin-bottom:6px}
+.msg.bot img.gen{display:block;max-width:100%;border-radius:12px;margin:.6em 0}
+#micBtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--ink)}
+#micBtn:hover{background:var(--hover)}
+#micBtn.on{background:var(--accent);color:var(--accent-ink)}
+.lens button[data-p]{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+.lens button[data-p]:hover{background:var(--hover)}
+.src{font-size:13px;color:var(--muted);margin-top:4px}
+.src a{color:inherit;margin-right:12px;text-decoration:underline;overflow-wrap:anywhere}
+.note{max-width:720px;margin:6px auto 0;text-align:center;color:var(--muted);font-size:11px!important}
+
+textarea::placeholder,input::placeholder{color:var(--muted);opacity:1}
+.logo{display:block}
+.logo .eyes{transform:translate(calc(var(--ex,0) * 1px),calc(var(--ey,0) * 1px));transition:transform .16s ease-out}
+.logo .eye{transform-box:fill-box;transform-origin:center;transition:transform .1s}
+.logo .eye.l{transform:translateY(calc(var(--dl,0) * 1px)) scaleY(calc(var(--sl,1) * var(--bl,1)))}
+.logo .eye.r{transform:translateY(calc(var(--dr,0) * 1px)) scaleY(calc(var(--sr,1) * var(--bl,1)))}
+.logo.blink{--bl:.08}
+.msg.bot.typing{display:flex;align-items:center;gap:10px}
+.msg.bot.typing .logo{flex-shrink:0}
+
+/* Dialog */
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);width:min(440px,92vw);padding:22px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 6px;font:600 20px var(--serif)}
+label{display:block;margin:14px 0 4px;font-size:14px;font-weight:600}
+label span{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+dialog input,dialog textarea{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.row button{border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.row .primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+@media (max-width:860px){
+  #side{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .2s;box-shadow:none}
+  body.open #side{transform:none;box-shadow:4px 0 24px rgba(0,0,0,.25)}
+  body.open #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20}
+  #menuBtn{display:block}
+}
+@media (prefers-reduced-motion: reduce){ #side{transition:none} }
+
+/* Tipografi ringkas dan seragam */
+*, *::before, *::after{font-family:var(--sans)!important;font-size:14px!important}
+/* Ukuran teks percakapan disamakan dengan ukuran baca ChatGPT */
+.msg.user,.msg.bot,.msg.bot h2,.msg.bot h3,.msg.bot h4{font-size:16px!important}
+/* Cegah auto-zoom Safari iPhone saat kolom teks disentuh; pinch zoom tetap aktif */
+input, textarea{font-size:16px!important}
 </style>
 </head>
 <body>
-<header>
-  <span class="logo serif"><span id="hlogo"></span>Edhy Robot</span>
-  <div>
-    <button id="bkey" class="ib" title="API key"><span id="dot"></span><span id="stx"></span></button>
-    <button id="bnew" class="ib" title="Chat baru"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg></button>
-  </div>
-</header>
-<main id="scroll"><div class="wrap">
-  <div id="hero"><span id="hbig"></span><h1 class="serif">Apa yang ingin Anda cari hari ini?</h1><p>Cari di seluruh web, atau unggah foto untuk menemukan sumber dan hasil yang mirip.</p></div>
-  <div id="msgs"></div>
-</div></main>
-<footer><div class="wrap">
-  <div class="composer">
-    <div id="prev"></div>
-    <textarea id="inp" rows="1" placeholder="Tanyakan sesuatu, atau tempel/unggah foto..."></textarea>
-    <div class="row">
-      <button id="battach" class="ib" title="Unggah foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
-      <select id="flt" title="Filter sumber"></select>
-      <span class="gap"></span>
-      <button id="bsend" class="send" disabled title="Kirim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7M12 19V5"/></svg></button>
-    </div>
-  </div>
-  <input type="file" id="file" accept="image/*" multiple hidden>
-</div></footer>
 
-<div id="modal" hidden><div class="mc">
-  <h3>API key Gemini</h3>
-  <input id="ikey" type="password" placeholder="AIza..." autocomplete="off">
-  <p id="mmsg">Gratis di aistudio.google.com/apikey. Key disimpan di browser ini.</p>
-  <div class="mb"><button id="mc">Tutup</button><button id="ms">Tes &amp; simpan</button></div>
-</div></div>
+<aside id="side" aria-label="Menu">
+  <div class="brand" id="brand"></div>
+  <button class="newbtn" id="newBtn" type="button"><i>+</i> Chat baru</button>
+  <div class="lbl">Riwayat</div>
+  <ul id="list"></ul>
+  <button class="foot" id="settingsBtn" type="button">Pengaturan</button>
+</aside>
+<div id="scrim"></div>
 
+<main>
+  <div class="top">
+    <button id="menuBtn" type="button" aria-label="Buka menu">&#9776;</button>
+    <div id="title">Chat baru</div>
+    <div id="modelLabel"></div>
+  </div>
+  <div id="chat" aria-live="polite"><div class="wrap" id="wrap"></div></div>
+  <div class="dock">
+    <div id="chips"></div>
+    <form class="box" id="form">
+      <div id="menu" role="menu">
+        <button type="button" id="mFile">Lampirkan file atau foto</button>
+        <button type="button" id="mCam">Ambil foto</button>
+        <button type="button" id="mLens">Lens: baca gambar</button>
+        <button type="button" id="mLoc">Bagikan lokasi (GPS)</button>
+        <button type="button" id="mWeb">Cari di web</button>
+        <button type="button" id="mImg">Buat gambar</button>
+      </div>
+      <button id="plusBtn" type="button" aria-label="Tambah lampiran">+</button>
+      <input type="file" id="fileIn" multiple style="display:none">
+      <input type="file" id="camIn" accept="image/*" capture="environment" style="display:none">
+      <textarea id="text" rows="1" placeholder="Ketik pesan..." aria-label="Pesan"></textarea>
+      <button id="micBtn" type="button" aria-label="Bicara">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button id="sendBtn" type="submit" aria-label="Kirim">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </button>
+    </form>
+    <div class="note">officialbroadcaster | martaedhyx</div>
+  </div>
+</main>
+
+<input type="file" id="lensIn" accept="image/*" style="display:none">
+<dialog id="lensDlg" class="lens">
+  <h2>Lens</h2>
+  <p style="margin:0;color:var(--muted);font-size:14px">Pilih tugas, lalu ambil atau pilih gambar.</p>
+  <button type="button" data-p="Identifikasi semua objek di gambar ini dan jelaskan singkat.">Apa ini?</button>
+  <button type="button" data-p="Salin seluruh teks yang terlihat di gambar ini persis apa adanya.">Baca dan salin teks</button>
+  <button type="button" data-p="Baca teks di gambar ini, lalu terjemahkan ke bahasa Indonesia.">Terjemahkan teks</button>
+  <button type="button" data-p="Kerjakan soal di gambar ini langkah demi langkah.">Kerjakan soal</button>
+  <button type="button" data-web="1" data-p="Kenali produk di gambar ini, lalu cari info harga dan tempat belinya.">Cari produk</button>
+  <button type="button" data-p="Kenali tanaman atau hewan di gambar ini, lalu beri info penting dan cara merawatnya.">Tanaman dan hewan</button>
+  <div class="row"><button type="button" id="lensCancel">Batal</button></div>
+</dialog>
+<dialog id="dlg">
+  <h2>Pengaturan</h2>
+  <label for="key">API key Gemini<span>Dibuat di aistudio.google.com. Disimpan hanya di browser ini.</span></label>
+  <input id="key" type="password" autocomplete="off" placeholder="AIza...">
+  <label for="model">Model<span>Untuk akun gratis, pakai model Flash atau Flash-Lite.</span></label>
+  <input id="model" list="models" placeholder="gemini-3.1-flash-lite">
+  <datalist id="models"><option value="gemini-3.1-flash-lite"><option value="gemini-3-flash-preview"></datalist>
+  <label for="imgmodel">Model gambar<span>Dipakai di "Buat gambar". Model gambar sering butuh akun berbayar.</span></label>
+  <input id="imgmodel" list="imgmodels" placeholder="gemini-3.1-flash-image">
+  <datalist id="imgmodels"><option value="gemini-3.1-flash-image"><option value="gemini-3.1-flash-lite-image"></datalist>
+  <label for="sys">Kepribadian bot<span>Instruksi yang selalu diikuti bot.</span></label>
+  <textarea id="sys" rows="3"></textarea>
+  <div class="row">
+    <button type="button" id="cancelBtn">Batal</button>
+    <button type="button" class="primary" id="saveBtn">Simpan</button>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>
-/* ==== PASANG API KEY GEMINI GRATIS ANDA DI SINI (sekali saja) ==== */
-const API_KEY = ""; // API key jangan ditanam di HTML publik; masukkan melalui tombol API key.
-/* Buat gratis: https://aistudio.google.com/apikey  — batasi key ke domain situs Anda (HTTP referrer). */
-
-const $ = id => document.getElementById(id);
-const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h) e.innerHTML = h; return e; };
-const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function note(m) { const d = el('div', 'b err'); d.textContent = '⚠️ ' + m; const x = $('msgs'); if (x) x.append(d); }
-window.addEventListener('error', e => note('Error skrip: ' + e.message));
-window.addEventListener('unhandledrejection', e => note('Error: ' + (e.reason?.message || e.reason)));
-
-const BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
-const FILTERS = [
-  ['Semua Web', ''], ['YouTube', 'site:youtube.com'], ['TikTok', 'site:tiktok.com'], ['GitHub', 'site:github.com'],
-  ['Reddit', 'site:reddit.com'], ['X / Twitter', 'site:x.com OR site:twitter.com'], ['Instagram', 'site:instagram.com'],
-  ['Wikipedia', 'site:wikipedia.org'], ['Stack Overflow', 'site:stackoverflow.com'],
-  ['Jurnal', 'site:scholar.google.com OR site:arxiv.org OR site:researchgate.net'],
-  ['Marketplace', 'site:tokopedia.com OR site:shopee.co.id OR site:amazon.com OR site:aliexpress.com'],
-  ['Berita', 'berita terbaru dari media berita kredibel']
-];
-const SYSTEM = "Kamu adalah Edhy Robot, asisten AI yang bernalar, mencari web, dan menggunakan alat saat relevan. Untuk pertanyaan faktual/terkini gunakan Google Search grounding; sebutkan sumber dan jangan mengarang URL. Untuk tugas yang meminta tindakan, gunakan alat yang tersedia jika cocok: kalkulator untuk hitungan, buat file teks jika diminta membuat/menyimpan dokumen, dan buka URL hanya jika pengguna secara jelas memintanya. Jangan mengklaim tindakan selesai jika alat gagal. Minta klarifikasi sebelum tindakan yang berisiko atau ambigu. Jawab dalam bahasa pengguna, ringkas dan terstruktur dalam Markdown. Tulis URL YouTube asli agar jadi pemutar. Jika pengguna mengirim gambar: deskripsikan objek/teks/konteks lalu cari hal terkait di web. Jangan mengidentifikasi orang dari wajahnya. Jika tidak ada hasil, katakan terus terang.";
-const DEFAULT_IMG = "Analisis gambar ini lalu cari di internet semua data yang mirip atau terkait: sumber asli, produk, tempat, dan halaman serupa, lengkap dengan tautan.";
-const YT = /(?:youtube\.com\/(?:watch\?(?:\S*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/;
-
-const store = {
-  get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }
-};
-const key = () => store.get('edhy_key') || API_KEY;
-if (window.marked) marked.use({ gfm: true, breaks: true });
-
-/* ---------- Ikon bot (mata selalu bergerak) ---------- */
-const BOT = (s = 32) => `<svg class="bot" width="${s}" height="${s}" viewBox="0 0 64 64" fill="none"><line x1="32" y1="14" x2="32" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="5.5" r="3" fill="#fff"/><rect x="3" y="27" width="5" height="14" rx="2.5" fill="#fff"/><rect x="56" y="27" width="5" height="14" rx="2.5" fill="#fff"/><rect x="9" y="14" width="46" height="40" rx="15" fill="#0b0b0b" stroke="#fff" stroke-width="2.5"/><g class="eye"><circle cx="23" cy="33" r="8" fill="#fff"/><circle class="pu" cx="23" cy="33" r="3.6" fill="#000"/></g><g class="eye"><circle cx="41" cy="33" r="8" fill="#fff"/><circle class="pu" cx="41" cy="33" r="3.6" fill="#000"/></g><path d="M26 46.5q6 4 12 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
-$('hlogo').innerHTML = BOT(34); $('hbig').innerHTML = BOT(88);
-
-let history = [], pending = [], busy = false;
-const msgs = $('msgs'), inp = $('inp'), bsend = $('bsend'), prev = $('prev'), scroll = $('scroll');
-
-(function look() {
-  const a = Math.random() * 6.283, r = Math.random() < .2 ? 0 : Math.random() * 4, s = document.documentElement.style;
-  s.setProperty('--px', (Math.cos(a) * r).toFixed(2)); s.setProperty('--py', (Math.sin(a) * r * .8).toFixed(2));
-  setTimeout(look, (busy ? 220 : 420) + Math.random() * 900);
-})();
-
-FILTERS.forEach(([l, v]) => { const o = el('option'); o.textContent = l; o.value = v; $('flt').append(o); });
-const upd = () => { bsend.disabled = busy || (!inp.value.trim() && !pending.length); };
-const down = () => { scroll.scrollTop = scroll.scrollHeight; };
-function status() { const k = !!key(); $('dot').style.background = k ? '#22c55e' : '#f59e0b'; $('stx').textContent = k ? 'Key terpasang' : 'Atur API key'; }
-status();
-
-/* ---------- Modal API key ---------- */
-const modal = open => { $('modal').hidden = !open; if (open) { $('ikey').value = key(); $('mmsg').textContent = 'Gratis di aistudio.google.com/apikey. Key disimpan di browser ini.'; $('ikey').focus(); } };
-$('bkey').onclick = () => modal(true);
-$('mc').onclick = () => modal(false);
-$('ms').onclick = async () => {
-  const k = $('ikey').value.trim(); if (!k) { $('mmsg').textContent = 'Isi dulu key-nya.'; return; }
-  $('mmsg').textContent = 'Menguji koneksi...';
-  try {
-    const r = await fetch(BASE + '/models?pageSize=100', { headers: { 'x-goog-api-key': k } });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) { $('mmsg').textContent = '❌ ' + (d.error?.message || 'Gagal (HTTP ' + r.status + ')'); return; }
-    const available = (d.models || []).filter(m => m.supportedGenerationMethods?.includes('generateContent')).map(m => m.name.replace(/^models\\//, ''));
-    const chosen = MODELS.find(m => available.includes(m));
-    if (!chosen) { $('mmsg').textContent = '❌ Key valid, tetapi model Gemini yang didukung aplikasi tidak tersedia. Periksa project/API di Google AI Studio.'; return; }
-    const test = await fetch(BASE + '/models/' + chosen + ':generateContent', { method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':k}, body:JSON.stringify({contents:[{role:'user',parts:[{text:'Balas hanya: Tes berhasil'}]}]}) });
-    const td = await test.json().catch(() => ({}));
-    if (!test.ok) { $('mmsg').textContent = '❌ Key terbaca, tetapi tes AI gagal: ' + (td.error?.message || 'HTTP '+test.status); return; }
-  } catch (e) { $('mmsg').textContent = '❌ Tidak bisa menjangkau server Google (' + e.message + '). Periksa internet/VPN/pemblokir.'; return; }
-  store.set('edhy_key', k); status(); $('mmsg').textContent = '✅ Tes AI berhasil. Key tersimpan di browser ini.'; setTimeout(() => modal(false), 900);
-};
-
-/* ---------- Gambar ---------- */
-function toImg(file) {
-  return new Promise((ok, no) => {
-    const u = URL.createObjectURL(file), im = new Image();
-    im.onload = () => {
-      const s = Math.min(1, 1280 / Math.max(im.width, im.height)), c = el('canvas');
-      c.width = im.width * s; c.height = im.height * s;
-      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-      const url = c.toDataURL('image/jpeg', .85); URL.revokeObjectURL(u);
-      ok({ mime: 'image/jpeg', data: url.split(',')[1], url });
-    };
-    im.onerror = () => no(); im.src = u;
-  });
-}
-function rp() {
-  prev.innerHTML = '';
-  pending.forEach((p, i) => {
-    const d = el('div', 'th'), im = el('img'), x = el('button', '', '×');
-    im.src = p.url; x.onclick = () => { pending.splice(i, 1); rp(); upd(); };
-    d.append(im, x); prev.append(d);
-  });
-  prev.style.display = pending.length ? 'flex' : 'none';
-}
-async function addFiles(fs) {
-  for (const f of fs) { if (f.type.startsWith('image/') && pending.length < 4) { try { pending.push(await toImg(f)); } catch {} } }
-  rp(); upd();
-}
-$('battach').onclick = () => $('file').click();
-$('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
-document.addEventListener('paste', e => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length) { e.preventDefault(); addFiles(fs); } });
-document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('drop'); });
-document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('drop'); });
-document.addEventListener('drop', e => { e.preventDefault(); document.body.classList.remove('drop'); addFiles(e.dataTransfer.files); });
-
-/* ---------- Render ---------- */
-function cite(text, meta) {
-  const ch = meta?.groundingChunks || [], sp = meta?.groundingSupports || [];
-  if (!ch.length || !sp.length) return text;
-  const enc = new TextEncoder(), dec = new TextDecoder(), b = enc.encode(text), ins = {};
-  sp.forEach(s => {
-    const e = s.segment?.endIndex; if (!e) return;
-    const m = (s.groundingChunkIndices || []).filter(i => ch[i]?.web?.uri).map(i => `<a class="cite" href="${ch[i].web.uri}">[${i + 1}]</a>`).join('');
-    if (m) ins[e] = (ins[e] || '') + m;
-  });
-  let out = '', pv = 0;
-  Object.keys(ins).map(Number).sort((a, c) => a - c).forEach(p => {
-    if (p > b.length) return;
-    let q = p; while (q > pv && (b[q - 1] === 10 || b[q - 1] === 32)) q--;
-    out += dec.decode(b.slice(pv, q)) + ins[p]; pv = q;
-  });
-  return out + dec.decode(b.slice(pv));
-}
-function render(text, meta) {
-  const box = el('div');
-  if (window.marked && window.DOMPurify) box.innerHTML = DOMPurify.sanitize(marked.parse(cite(text, meta)));
-  else box.innerHTML = esc(text.replace(/<a class="cite"[^>]*>(\[\d+\])<\/a>/g, '$1')).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/\n/g, '<br>');
-  const seen = new Set();
-  box.querySelectorAll('a').forEach(a => {
-    a.target = '_blank'; a.rel = 'noopener noreferrer';
-    const m = a.href.match(YT);
-    if (m && !seen.has(m[1])) {
-      seen.add(m[1]);
-      const w = el('div', 'yt', `<iframe src="https://www.youtube.com/embed/${m[1]}" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`);
-      (a.closest('p,li') || a).after(w);
-    }
-  });
-  return box;
-}
-function extras(meta) {
-  const w = el('div');
-  const mk = (label, items) => {
-    w.append(el('div', 'lbl', label));
-    const r = el('div', 'chips');
-    items.forEach(([href, txt]) => { const a = el('a', 'chip'); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = txt; r.append(a); });
-    w.append(r);
+(function(){
+  var DEFAULTS = {
+    model: 'gemini-3.1-flash-lite',
+    sys: 'Kamu asisten yang ramah dan membantu. Jawab dalam bahasa yang dipakai pengguna, singkat dan jelas.'
   };
-  const srcs = (meta?.groundingChunks || []).map((c, i) => [c.web, i]).filter(x => x[0]?.uri);
-  if (srcs.length) mk('Sumber', srcs.map(([s, i]) => [s.uri, `[${i + 1}] ${s.title || 'Sumber'}`]));
-  const qs = meta?.webSearchQueries || [];
-  if (qs.length) mk('Pencarian yang dilakukan', qs.map(q => ['https://www.google.com/search?q=' + encodeURIComponent(q), '🔎 ' + q]));
-  return w;
-}
-function addUser(t, imgs) {
-  const d = el('div', 'u');
-  if (imgs.length) { const g = el('div', 'imgs'); imgs.forEach(i => { const im = el('img'); im.src = i.url; g.append(im); }); d.append(g); }
-  if (t) d.append(document.createTextNode(t));
-  if (imgs.length) { const a = el('a'); a.href = 'https://lens.google.com/'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Buka Google Lens ↗'; d.append(el('br'), a); }
-  msgs.append(d); down();
-}
-function addBot(r, isErr) {
-  const row = el('div', 'bm'), av = el('div', 'av', BOT(28)), d = el('div', 'b' + (isErr ? ' err' : ''));
-  const md = el('div', 'md'); md.append(...render(r.shown || r.text, r.meta).childNodes); d.append(md);
-  const ex = extras(r.meta); if (ex.children.length) d.append(ex);
-  if (r.eng) d.append(el('div', 'lbl', 'Mesin: ' + r.eng));
-  row.append(av, d); msgs.append(row); down();
-}
-function addLoading() { const d = el('div', 'ld', BOT(28) + '<span>Mencari dan berpikir...</span>'); msgs.append(d); down(); return d; }
+  var $ = function(id){ return document.getElementById(id); };
+  var EYE = { x:0, y:0, sl:1, sr:1, dl:0, dr:0 };
+  function eyeVars(){ return { '--ex':EYE.x, '--ey':EYE.y, '--sl':EYE.sl, '--sr':EYE.sr, '--dl':EYE.dl, '--dr':EYE.dr }; }
+  function logo(px){
+    var size = (px * 1.3).toFixed(1);
+    var v = eyeVars(), st = Object.keys(v).map(function(k){ return k + ':' + v[k]; }).join(';');
+    return '<svg class="logo" width="'+size+'" height="'+size+'" viewBox="0 0 100 100" role="img" aria-label="martaedhyx" style="'+st+'">'
+      + '<circle cx="50" cy="50" r="48" fill="#fff"/>'
+      + '<g class="eyes"><rect class="eye l" x="30.5" y="31" width="9" height="28" rx="4.5" fill="#000"/>'
+      + '<rect class="eye r" x="60.5" y="31" width="9" height="28" rx="4.5" fill="#000"/></g></svg>';
+  }
 
-/* ---------- Gemini ---------- */
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function post(model, body) {
-  const url = `${BASE}/models/${model}:generateContent`;
-  try { return await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key() }, body }); }
-  catch {
-    try { return await fetch(`${url}?key=${encodeURIComponent(key())}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
-    catch (e) { throw Object.assign(new Error('Koneksi keluar ke server Gemini diblokir (' + e.message + '). Biasanya karena file dibuka di dalam pratinjau aplikasi Claude: buka lewat hosting web atau Safari/Chrome, atau cek internet/VPN.'), { net: true }); }
-  }
-}
-async function runAgentTool(name, args) {
-  if (name === 'calculate') {
-    const expr = String(args.expression || '').trim();
-    if (!expr || expr.length > 120 || !/^[0-9+*/().,%\s-]+$/.test(expr)) return { ok:false, error:'Ekspresi hitung tidak valid.' };
-    try {
-      // Parser sederhana: hanya angka dan operator matematika yang diizinkan.
-      const tokens = expr.match(/\d+(?:\.\d+)?|[()+*/%\-]|,/g);
-      if (!tokens || tokens.join('').replace(/,/g,'') !== expr.replace(/\s/g,'').replace(/,/g,'')) return { ok:false, error:'Ekspresi tidak dapat diproses.' };
-      const normalized = expr.replace(/,/g,'');
-      if (!/^[0-9+*/().%\s-]+$/.test(normalized)) return { ok:false, error:'Ekspresi tidak valid.' };
-      const value = Function('"use strict"; return (' + normalized + ')')();
-      if (typeof value !== 'number' || !Number.isFinite(value)) return { ok:false, error:'Hasil bukan angka yang valid.' };
-      return { ok:true, expression:expr, result:value };
-    } catch { return { ok:false, error:'Format perhitungan tidak valid.' }; }
-  }
-  if (name === 'create_text_file') {
-    const filename = String(args.filename || 'dokumen-edhy.txt').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80) || 'dokumen-edhy.txt';
-    const content = String(args.content || '');
-    if (!content.trim()) return { ok:false, error:'Isi file kosong.' };
-    if (content.length > 200000) return { ok:false, error:'File terlalu besar (maksimum 200 KB).' };
-    const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download=filename; a.style.display='none';
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
-    return { ok:true, message:'File dibuat dan unduhan dimulai.', filename, characters:content.length };
-  }
-  if (name === 'open_web_url') {
-    let u;
-    try { u = new URL(String(args.url || '')); } catch { return { ok:false, error:'URL tidak valid.' }; }
-    if (!['https:','http:'].includes(u.protocol)) return { ok:false, error:'Hanya URL HTTP/HTTPS yang diizinkan.' };
-    if (!args.user_requested) return { ok:false, error:'URL hanya boleh dibuka jika pengguna secara jelas meminta membuka tautan.' };
-    const w = window.open(u.href, '_blank', 'noopener,noreferrer');
-    return w ? { ok:true, message:'Tautan dibuka.', url:u.href } : { ok:false, error:'Browser memblokir pop-up. Tampilkan tautan agar pengguna bisa membukanya sendiri.', url:u.href };
-  }
-  if (name === 'get_local_time') return { ok:true, time:new Date().toLocaleString('id-ID',{dateStyle:'full',timeStyle:'medium'}) };
-  return { ok:false, error:'Alat tidak dikenal.' };
-}
-const AGENT_FUNCTIONS = [
-  {name:'calculate',description:'Hitung ekspresi matematika sederhana. Gunakan untuk hitungan numerik.',parameters:{type:'OBJECT',properties:{expression:{type:'STRING',description:'Ekspresi matematika, misalnya (125000*3)-5000'}},required:['expression']}},
-  {name:'create_text_file',description:'Buat dan unduh file teks ketika pengguna meminta dokumen/file yang bisa disimpan.',parameters:{type:'OBJECT',properties:{filename:{type:'STRING',description:'Nama file dengan ekstensi .txt'},content:{type:'STRING',description:'Isi lengkap file teks'}},required:['filename','content']}},
-  {name:'open_web_url',description:'Buka URL HTTP/HTTPS di tab baru hanya jika pengguna secara eksplisit meminta tautan dibuka. Set user_requested true hanya jika permintaan eksplisit.',parameters:{type:'OBJECT',properties:{url:{type:'STRING'},user_requested:{type:'BOOLEAN'}},required:['url','user_requested']}},
-  {name:'get_local_time',description:'Dapatkan tanggal dan waktu lokal perangkat pengguna.',parameters:{type:'OBJECT',properties:{},required:[]}}
-];
-async function callGemini() {
-  let contents = history.slice();
-  let last = { s: 0, m: '' };
-  for (const model of MODELS) {
-    contents = history.slice();
-    let meta = null;
-    for (let turn = 0; turn < 5; turn++) {
-      const body = JSON.stringify({
-        contents,
-        tools: [{google_search:{}},{function_declarations:AGENT_FUNCTIONS}],
-        systemInstruction:{parts:[{text:SYSTEM}]},
-        toolConfig:{functionCallingConfig:{mode:'AUTO'}}
-      });
-      let res;
-      try { res = await post(model, body); }
-      catch(e) { if(e.net) throw e; throw new Error('Gagal menghubungi Gemini: '+e.message); }
-      const data = await res.json().catch(()=>({}));
-      if (!res.ok) {
-        last = {s:res.status,m:data.error?.message||''};
-        if ([400,404].includes(res.status) && /model|google_search|function|tool|not supported|not found/i.test(last.m)) break;
-        if (last.s===400 && /API key/i.test(last.m)) {store.set('edhy_key','');status();throw new Error('API key tidak valid. Klik status API key di kanan atas untuk memasukkan key yang valid.');}
-        if (last.s===401) throw new Error('API key ditolak (401). Buat/ganti key di Google AI Studio dan pastikan Gemini API aktif. '+last.m);
-        if (last.s===403) throw new Error('Akses API ditolak. Periksa pembatasan key, project, dan apakah Gemini API aktif. '+last.m);
-        if (last.s===429) throw new Error('Kuota/rate limit Gemini habis atau belum aktif. '+last.m);
-        throw new Error(last.m||'Gagal terhubung ke Gemini (HTTP '+last.s+').');
-      }
-      if(data.promptFeedback?.blockReason) throw new Error('Permintaan diblokir: '+data.promptFeedback.blockReason);
-      const candidate=data.candidates?.[0], parts=candidate?.content?.parts||[];
-      meta=candidate?.groundingMetadata||meta;
-      const calls=parts.filter(p=>p.functionCall?.name);
-      if(calls.length) {
-        contents.push({role:'model',parts});
-        const responses=[];
-        for(const part of calls) {
-          const fc=part.functionCall;
-          let result;
-          try { result=await runAgentTool(fc.name,fc.args||{}); }
-          catch(e) { result={ok:false,error:e.message||'Alat gagal dijalankan.'}; }
-          responses.push({functionResponse:{name:fc.name,response:{result}}});
-        }
-        contents.push({role:'user',parts:responses});
-        continue;
-      }
-      const answer=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
-      if(!answer) throw new Error('Respons kosong dari Gemini'+(candidate?.finishReason?' ('+candidate.finishReason+')':'')+'. Coba ulangi.');
-      return {text:answer,meta};
+  /* gerak mata: santai, berpikir, menganalisis, menelusuri, menulis */
+  var Eyes = (function(){
+    var mode = 'idle', locked = false, until = 0, hold = 0, timer = null, n = 0;
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function rnd(a, b){ return a + Math.random() * (b - a); }
+    function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+    function look(x, y, o){
+      o = o || {};
+      EYE.x = x; EYE.y = y;
+      EYE.sl = o.sl !== undefined ? o.sl : (o.sy || 1);
+      EYE.sr = o.sr !== undefined ? o.sr : (o.sy || 1);
+      EYE.dl = o.dl || 0; EYE.dr = o.dr || 0;
+      var v = eyeVars(), all = document.querySelectorAll('.logo');
+      for (var i = 0; i < all.length; i++){ for (var k in v) all[i].style.setProperty(k, v[k]); }
     }
-    if (![400,404].includes(last.s) || !/model|google_search|function|tool|not supported|not found/i.test(last.m)) break;
+    function blink(){
+      var all = document.querySelectorAll('.logo'), i;
+      for (i = 0; i < all.length; i++) all[i].classList.add('blink');
+      setTimeout(function(){
+        var a = document.querySelectorAll('.logo');
+        for (var k = 0; k < a.length; k++) a[k].classList.remove('blink');
+      }, 130);
+    }
+    function idle(){
+      var r = Math.random();
+      if (r < .22){ blink(); if (Math.random() < .35) setTimeout(blink, 260); }
+      else if (r < .34) look(-10, rnd(-2, 2));
+      else if (r < .46) look(10, rnd(-2, 2));
+      else if (r < .54) look(rnd(-3, 3), 9);
+      else if (r < .61) look(rnd(-3, 3), -8);
+      else if (r < .69) look(pick([-9, 9]), pick([-7, 8]));
+      else if (r < .76){ look(0, 0, { sy:.55 }); setTimeout(function(){ look(0, 0); }, 420); }
+      else if (r < .83) look(rnd(-3, 3), -1, { dl:-3, dr:2 });
+      else if (r < .88){ look(0, 0, { sr:.25 }); setTimeout(function(){ look(0, 0); }, 320); }
+      else if (r < .93) look(0, -2, { sy:1.15 });
+      else if (r < .97){ look(-10, 0); setTimeout(function(){ look(10, 0); }, 300); }
+      else { look(0, 0); blink(); }
+      return rnd(450, 1300);
+    }
+    var TH = [[-9,-8,{}],[9,-9,{}],[0,-10,{ sy:.8 }],[-8,-5,{ dl:-3, dr:2 }],[8,-6,{ dl:2, dr:-3 }],[0,-3,{ sy:.6 }]];
+    function think(){
+      var p = TH[n++ % TH.length]; look(p[0], p[1], p[2]);
+      if (Math.random() < .3) setTimeout(blink, 300);
+      return rnd(650, 1100);
+    }
+    var AN = [];
+    [-6, 0, 6].forEach(function(y){ [-10, -5, 0, 5, 10].forEach(function(x){ AN.push([x, y]); }); });
+    function analyze(){
+      var p = AN[n++ % AN.length]; look(p[0], p[1], { sy:.8 });
+      if (n % 15 === 0) blink();
+      return 170;
+    }
+    function search(){
+      look(pick([-10, 10, -6, 6, 0, -10, 10]), rnd(-4, 4), { sy:1.1 });
+      if (Math.random() < .08) blink();
+      return rnd(110, 220);
+    }
+    function write(){
+      look(rnd(-7, 7), rnd(6, 10), Math.random() < .2 ? { dl:-2, dr:1 } : {});
+      if (Math.random() < .12) blink();
+      return rnd(170, 320);
+    }
+    function step(){
+      clearTimeout(timer);
+      var now = Date.now();
+      if (now < hold){ timer = setTimeout(step, hold - now + 20); return; }
+      if (!locked && mode !== 'idle' && now > until) mode = 'idle';
+      var d = mode === 'think' ? think() : mode === 'analyze' ? analyze() : mode === 'search' ? search() : mode === 'write' ? write() : idle();
+      timer = setTimeout(step, d);
+    }
+    if (!still) step();
+    return {
+      lock: function(m){ locked = true; mode = m; n = 0; if (!still) step(); },
+      unlock: function(){ locked = false; mode = 'idle'; if (!still) step(); },
+      isLocked: function(){ return locked; },
+      pulse: function(m, ms){
+        if (locked) return;
+        var changed = mode !== m; mode = m; n = changed ? 0 : n; until = Date.now() + ms;
+        if (changed && !still) step();
+      },
+      aha: function(){
+        if (still) return;
+        clearTimeout(timer); hold = Date.now() + 700;
+        look(0, -7, { sy:1.2 });
+        setTimeout(function(){ look(0, 2); blink(); }, 380);
+        timer = setTimeout(step, 720);
+      }
+    };
+  })();
+  var wrap = $('wrap'), chatEl = $('chat'), text = $('text'), sendBtn = $('sendBtn'), dlg = $('dlg'), list = $('list');
+  var busy = false, chats = [], cur = null;
+
+  function load(k, d){ try { var v = localStorage.getItem(k); return v === null ? d : v; } catch(e){ return d; } }
+  function save(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  function slim(m){
+    var c = { role:m.role, q:m.q, parts: m.parts.map(function(p){
+      if (p.inlineData) return { text:'[Gambar atau file tidak tersimpan setelah halaman ditutup]' };
+      if (p.text && p.text.length > 20000) return { text:p.text.slice(0,20000) + '\n[dipotong]' };
+      return p;
+    }) };
+    if (m.src) c.src = m.src;
+    if (m.att) c.att = m.att.map(function(a){ return { name:a.name }; });
+    return c;
   }
-  throw new Error(last.m||'Model Gemini yang tersedia tidak mendukung kombinasi pencarian web dan alat agen ini. Periksa model/API yang aktif di Google AI Studio.');
-}
-async function callClaude() {
-  const m2 = history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts.map(p => p.inlineData ? { type: 'image', source: { type: 'base64', media_type: p.inlineData.mimeType, data: p.inlineData.data } } : { type: 'text', text: p.text }) }));
-  const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM, messages: m2, tools: [{ type: 'web_search_20250305', name: 'web_search' }] }) });
-  const d = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(d.error?.message || 'HTTP ' + res.status);
-  const src = [], qs = [];
-  const idx = (u, t) => { let i = src.findIndex(s => s.web.uri === u); if (i < 0) { i = src.length; src.push({ web: { uri: u, title: '' } }); } if (t && !src[i].web.title) src[i].web.title = t; return i; };
-  (d.content || []).forEach(b => {
-    if (b.type === 'server_tool_use' && b.input?.query) qs.push(b.input.query);
-    if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) b.content.forEach(r => { if (r.url) idx(r.url, r.title); });
-  });
-  let text = '', shown = '';
-  (d.content || []).forEach(b => {
-    if (b.type !== 'text') return;
-    text += b.text;
-    shown += b.text + (b.citations || []).filter(c => c.url).map(c => `<a class="cite" href="${c.url}">[${idx(c.url, c.title) + 1}]</a>`).join('');
-  });
-  if (!text) throw new Error('respons kosong');
-  return { text, shown, meta: { groundingChunks: src, webSearchQueries: qs }, eng: 'Claude (mode pratinjau)' };
-}
-async function ask() {
-  return callGemini();
-}
+  function persist(){
+    save('gem_chats', JSON.stringify(chats.map(function(c){ return { id:c.id, title:c.title, msgs:c.msgs.map(slim) }; })));
+    save('gem_cur', cur || '');
+  }
 
-async function send() {
-  if (busy) return;
-  const raw = inp.value.trim(), imgs = pending.slice();
-  if (!raw && !imgs.length) return;
-  if (!key()) { modal(true); return; }
-  inp.value = ''; inp.style.height = 'auto'; pending = []; rp();
-  $('hero').style.display = 'none';
-  addUser(raw, imgs);
-  const f = $('flt').value;
-  let t = raw || DEFAULT_IMG;
-  if (f) t += `\n\n[Filter pencarian aktif: ${f}. Terapkan pada setiap query pencarian (pakai operator site: bila ada) dan utamakan hasil dari sumber ini.]`;
-  history.push({ role: 'user', parts: [...imgs.map(i => ({ inlineData: { mimeType: i.mime, data: i.data } })), { text: t }] });
-  busy = true; upd();
-  const ld = addLoading();
-  try {
-    const r = await ask();
-    ld.remove(); addBot(r); history.push({ role: 'model', parts: [{ text: r.text }] });
-  } catch (e) {
-    ld.remove(); history.pop(); inp.value = raw; pending = imgs; rp();
-    addBot({ text: e.message }, true);
-  } finally { busy = false; upd(); inp.focus(); }
-}
+  var cfg = { key: load('gem_key',''), model: load('gem_model', DEFAULTS.model), sys: load('gem_sys', DEFAULTS.sys), imgmodel: load('gem_imgmodel','gemini-3.1-flash-image') };
+  try { chats = JSON.parse(load('gem_chats','[]')) || []; } catch(e){ chats = []; }
+  cur = load('gem_cur','') || null;
+  if (!chats.length){ // pindahkan riwayat dari versi lama
+    try {
+      var old = JSON.parse(load('gem_hist','[]'));
+      if (old && old.length){ chats.push({ id:'c'+Date.now(), title: old[0].parts[0].text.slice(0,40), msgs: old }); cur = chats[0].id; persist(); }
+    } catch(e){}
+  }
+  function getChat(){ for (var i=0;i<chats.length;i++) if (chats[i].id === cur) return chats[i]; return null; }
 
-inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; upd(); });
-inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
-bsend.onclick = send;
-$('bnew').onclick = () => { if (busy) return; history = []; msgs.innerHTML = ''; $('hero').style.display = ''; };
-if (!key()) setTimeout(() => modal(true), 400);
+  /* ---------- tampilan teks ---------- */
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function inline(s){
+    return s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,function(_,label,url){
+      var host=''; try{host=new URL(url).hostname;}catch(e){}
+      var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
+      return '<a class="md-link" href="'+url+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
+    }).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  }
+  function blocks(t){
+    var out='',mode='',lines=t.split('\n');
+    function close(){if(mode){out+='</'+mode+'>';mode='';}}
+    lines.forEach(function(line){
+      var m;
+      if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';}
+      else if((m=line.match(/^\s*[-*]\s+(.*)/))){if(mode!=='ul'){close();out+='<ul>';mode='ul';}out+='<li>'+inline(m[1])+'</li>';}
+      else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){if(mode!=='ol'){close();out+='<ol>';mode='ol';}out+='<li>'+inline(m[1])+'</li>';}
+      else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
+      else if(!line.trim()){close();}
+      else{close();out+='<p>'+inline(line)+'</p>';}
+    });close();return out;
+  }
+  function md(src){
+    var parts=esc(src).split('```'),out='';
+    parts.forEach(function(p,i){
+      if(i%2){
+        var m=p.match(/^(\w+)?\n/),lang=m&&m[1]?m[1]:'HTML',code=m?p.slice(m[0].length):p;
+        out+='<pre><span class="code-lang">'+lang+'</span><button type="button" class="code-copy">Salin</button><code>'+code.replace(/\n$/,'')+'</code></pre>';
+      }else out+=blocks(p);
+    });return out;
+  }
+  function enhanceMarkdown(root){
+    if(window.hljs) root.querySelectorAll('pre code').forEach(function(c){try{window.hljs.highlightElement(c);}catch(e){}});
+    root.querySelectorAll('.code-copy').forEach(function(b){b.addEventListener('click',function(){
+      var c=b.parentNode.querySelector('code'),v=c?c.textContent:'';
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(function(){b.textContent='Tersalin';setTimeout(function(){b.textContent='Salin';},1300);});
+    });});
+  }
+
+  /* ---------- render ---------- */
+  var pending = [], imageMode = false, searchOn = false, locOn = false, loc = null, lensPrompt = '', lensWeb = false;
+  function el(tag, cls, txt){ var d = document.createElement(tag); if (cls) d.className = cls; if (txt) d.textContent = txt; return d; }
+  function userText(m){ return m.q !== undefined ? m.q : m.parts.map(function(p){ return p.text || ''; }).join(''); }
+
+  function addUser(m){
+    var d = el('div','msg user');
+    (m.att || []).forEach(function(a){
+      if (a.preview){ var im = el('img','thumb'); im.src = a.preview; im.alt = a.name; d.appendChild(im); }
+      else d.appendChild(el('div','file','\ud83d\udcce ' + a.name));
+    });
+    var t = userText(m); if (t) d.appendChild(el('div','',t));
+    wrap.appendChild(d);
+  }
+  function addBot(m, typewrite){
+    var d = el('div','msg bot'), all = '';
+    m.parts.forEach(function(p){
+      if (p.text){
+        all += p.text;
+        var s = el('div'); d.appendChild(s);
+        if (typewrite){
+          var raw = p.text, pos = 0;
+          (function reveal(){
+            pos = Math.min(pos + 12, raw.length);
+            s.textContent = raw.slice(0, pos);
+            if (pos < raw.length) setTimeout(reveal, 16);
+            else { s.innerHTML = md(raw); enhanceMarkdown(s); focusLatestExchange(); }
+          })();
+        } else { s.innerHTML = md(p.text); enhanceMarkdown(s); }
+      }
+      else if (p.inlineData){
+        var src = 'data:' + p.inlineData.mimeType + ';base64,' + p.inlineData.data;
+        var im = el('img','gen'); im.src = src; im.alt = 'Gambar buatan bot'; d.appendChild(im);
+        var a = el('a','copy','Simpan gambar'); a.href = src; a.download = 'gambar-martaedhyx.png'; a.style.color = 'inherit'; d.appendChild(a);
+      }
+    });
+    if (m.src && m.src.length){
+      var sd = el('div','src','Sumber: ');
+      m.src.forEach(function(z){ var a2 = el('a','',z.title); a2.href = z.uri; a2.target = '_blank'; a2.rel = 'noopener noreferrer'; sd.appendChild(a2); });
+      d.appendChild(sd);
+    }
+    if (all){
+      var copyIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg>';
+      var checkIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+      var micIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+      var b = el('button','copy'); b.type = 'button'; b.innerHTML = copyIcon; b.title = 'Salin'; b.setAttribute('aria-label','Salin jawaban');
+      b.addEventListener('click', function(){
+        try { navigator.clipboard.writeText(all).then(function(){ b.innerHTML = checkIcon; b.title = 'Tersalin'; setTimeout(function(){ b.innerHTML = copyIcon; b.title = 'Salin'; }, 1500); }); } catch(e){}
+      });
+      d.appendChild(b);
+      if (window.speechSynthesis){
+        var sp = el('button','copy'); sp.type = 'button'; sp.innerHTML = micIcon; sp.title = 'Dengarkan jawaban'; sp.setAttribute('aria-label','Dengarkan jawaban');
+        sp.addEventListener('click', function(){
+          if (speechSynthesis.speaking){ speechSynthesis.cancel(); sp.title = 'Dengarkan jawaban'; return; }
+          var u = new SpeechSynthesisUtterance(all.replace(/[`*#]/g,'')); u.lang = 'id-ID';
+          u.onend = function(){ sp.title = 'Dengarkan jawaban'; };
+          sp.title = 'Berhenti mendengarkan'; speechSynthesis.speak(u);
+        });
+        d.appendChild(sp);
+      }
+    }
+    wrap.appendChild(d);
+  }
+  function addErr(t){ wrap.appendChild(el('div','msg err',t)); chatEl.scrollTop = chatEl.scrollHeight; }
+
+  function renderSide(){
+    list.innerHTML = '';
+    if (!chats.length){ list.appendChild(el('li','none','Belum ada chat')); return; }
+    chats.slice().reverse().forEach(function(c){
+      var li = el('li', c.id === cur ? 'on' : '');
+      var b = el('button','ci',c.title); b.type = 'button'; b.title = c.title;
+      b.addEventListener('click', function(){ cur = c.id; persist(); render(); closeMenu(); });
+      var x = el('button','del','\u00d7'); x.type = 'button'; x.setAttribute('aria-label','Hapus chat');
+      x.addEventListener('click', function(){
+        if (!confirm('Hapus chat ini?')) return;
+        chats = chats.filter(function(k){ return k.id !== c.id; });
+        if (cur === c.id) cur = null;
+        persist(); render();
+      });
+      li.appendChild(b); li.appendChild(x); list.appendChild(li);
+    });
+  }
+
+  var lastGreeting = '';
+  function updateGreeting(){
+    var hourText = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Asia/Jakarta', hour:'2-digit', hourCycle:'h23'
+    }).format(new Date());
+    var hour = Number(hourText);
+    var period = hour >= 4 && hour < 11 ? 'pagi'
+      : hour >= 11 && hour < 15 ? 'siang'
+      : hour >= 15 && hour < 18 ? 'sore' : 'malam';
+    var greetings = [
+      'Lagi sibuk apa hari ini?',
+      'Bagaimana aktivitasmu ' + period + ' ini?',
+      'Ada cerita menarik hari ini?',
+      'Mau mencari tahu sesuatu yang baru?',
+      'Apa yang bisa kita kerjakan bersama hari ini?',
+      'Ada hal yang sedang kamu pikirkan?',
+      'Siap membantu. Mau mulai dari mana?',
+      'Hari ini ingin ngobrol tentang apa?',
+      'Punya rencana menarik untuk hari ini?',
+      'Butuh bantuan menyelesaikan sesuatu?',
+      'Apa kabar? Semoga harimu menyenangkan.',
+      'Ada pertanyaan yang ingin kamu pecahkan?'
+    ];
+    var greeting = $('greeting');
+    if (!greeting) return;
+    var next = lastGreeting;
+    while (greetings.length > 1 && next === lastGreeting){
+      next = greetings[Math.floor(Math.random() * greetings.length)];
+    }
+    lastGreeting = next;
+    greeting.textContent = next;
+  }
+
+  function focusLatestExchange(){
+    function applyFocus(){
+      var questions = wrap.querySelectorAll('.msg.user');
+      var latestQuestion = questions.length ? questions[questions.length - 1] : null;
+      if (!latestQuestion) return;
+      var questionTop = latestQuestion.getBoundingClientRect().top;
+      var chatTop = chatEl.getBoundingClientRect().top;
+      chatEl.scrollTop += questionTop - chatTop - 8;
+    }
+    requestAnimationFrame(function(){
+      applyFocus();
+      setTimeout(applyFocus, 100);
+      setTimeout(applyFocus, 350);
+    });
+  }
+
+  function render(animateLastBot){
+    var c = getChat();
+    $('modelLabel').textContent = '';
+    $('title').textContent = '';
+    wrap.innerHTML = '';
+    if (!c || !c.msgs.length){
+      var h = el('div','hello');
+      h.innerHTML = logo(36) + '<h1 id="greeting"></h1>';
+      updateGreeting();
+      wrap.appendChild(h);
+    } else {
+      for (var j = 0; j < c.msgs.length; j++){
+        if (c.msgs[j].role === 'user') addUser(c.msgs[j]);
+        else if (c.msgs[j].role === 'model') addBot(c.msgs[j], !!animateLastBot && j === c.msgs.length - 1);
+      }
+    }
+    renderSide();
+    if (c && c.msgs.length) focusLatestExchange();
+    else chatEl.scrollTop = 0;
+  }
+
+  /* ---------- lampiran ---------- */
+  function renderChips(){
+    var box = $('chips'); box.innerHTML = '';
+    if (imageMode){
+      var m = el('div','chip mode'); m.appendChild(el('span','','Mode gambar'));
+      var x2 = el('button','','\u00d7'); x2.type = 'button'; x2.setAttribute('aria-label','Matikan mode gambar');
+      x2.addEventListener('click', function(){ imageMode = false; renderChips(); });
+      m.appendChild(x2); box.appendChild(m);
+    }
+    function mc(label, off){
+      var m = el('div','chip mode'); m.appendChild(el('span','',label));
+      var x = el('button','','\u00d7'); x.type = 'button'; x.setAttribute('aria-label','Matikan ' + label);
+      x.addEventListener('click', function(){ off(); renderChips(); });
+      m.appendChild(x); box.appendChild(m);
+    }
+    if (locOn) mc(loc ? 'Lokasi aktif' : 'Mencari lokasi...', function(){ locOn = false; });
+    if (searchOn) mc('Cari di web', function(){ searchOn = false; });
+    pending.forEach(function(a, i){
+      var c = el('div','chip');
+      if (a.preview){ var im = el('img'); im.src = a.preview; im.alt = ''; c.appendChild(im); }
+      c.appendChild(el('span','',a.name));
+      var x = el('button','','\u00d7'); x.type = 'button'; x.setAttribute('aria-label','Hapus lampiran');
+      x.addEventListener('click', function(){ pending.splice(i,1); renderChips(); });
+      c.appendChild(x); box.appendChild(c);
+    });
+    text.placeholder = imageMode ? 'Jelaskan gambar yang mau dibuat...' : 'Ketik pesan...';
+  }
+
+  var TEXT_EXT = 'txt md csv tsv json xml html htm css js ts jsx tsx py java c h cpp cs go rs rb php sql yml yaml toml ini log sh bat r swift kt'.split(' ');
+  var MIME_EXT = { pdf:'application/pdf', mp3:'audio/mpeg', wav:'audio/wav', m4a:'audio/mp4', aac:'audio/aac', ogg:'audio/ogg', flac:'audio/flac',
+    mp4:'video/mp4', mov:'video/quicktime', webm:'video/webm', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp', heic:'image/heic', gif:'image/gif' };
+  function readAs(f, how){
+    return new Promise(function(ok, no){ var r = new FileReader(); r.onload = function(){ ok(r.result); }; r.onerror = no; r[how](f); });
+  }
+  async function addFile(f){
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    var mime = f.type || MIME_EXT[ext] || '';
+    var media = /^(image|video|audio)\//.test(mime) || mime === 'application/pdf';
+    if (media){
+      var used = pending.reduce(function(n, a){ return n + a.size; }, 0);
+      if (used + f.size > 15 * 1024 * 1024) return '"' + f.name + '" terlalu besar. Total lampiran maksimal sekitar 15 MB.';
+      var url = await readAs(f, 'readAsDataURL');
+      pending.push({ name:f.name, size:f.size, part:{ inlineData:{ mimeType:mime, data:url.split(',')[1] } }, preview: mime.indexOf('image/') === 0 ? url : null });
+      return '';
+    }
+    var txt = null;
+    if (ext === 'docx' && window.mammoth){
+      txt = (await window.mammoth.extractRawText({ arrayBuffer: await readAs(f, 'readAsArrayBuffer') })).value;
+    } else if (/^(xlsx|xls|xlsm|ods)$/.test(ext) && window.XLSX){
+      var wb = window.XLSX.read(await readAs(f, 'readAsArrayBuffer'), { type:'array' });
+      txt = wb.SheetNames.map(function(n){ return '## Sheet: ' + n + '\n' + window.XLSX.utils.sheet_to_csv(wb.Sheets[n]); }).join('\n\n');
+    } else if (mime.indexOf('text/') === 0 || TEXT_EXT.indexOf(ext) >= 0 || /json|xml|javascript/.test(mime)){
+      txt = await readAs(f, 'readAsText');
+    }
+    if (txt === null) return 'Format "' + f.name + '" belum bisa dibaca. Coba simpan sebagai PDF atau teks.';
+    if (txt.length > 200000) txt = txt.slice(0, 200000) + '\n[dipotong]';
+    pending.push({ name:f.name, size:f.size, part:{ text:'[Isi file: ' + f.name + ']\n' + txt }, preview:null });
+    return '';
+  }
+  async function onFiles(files){
+    var errs = [];
+    Eyes.pulse('analyze', 1800);
+    for (var i = 0; i < files.length; i++){
+      try { var e = await addFile(files[i]); if (e) errs.push(e); } catch(x){ errs.push('Gagal membaca "' + files[i].name + '".'); }
+    }
+    renderChips();
+    if (errs.length) addErr(errs.join(' '));
+  }
+
+  /* ---------- lokasi ---------- */
+  function getLoc(){
+    return new Promise(function(ok){
+      if (!navigator.geolocation){ ok({ error:0 }); return; }
+      navigator.geolocation.getCurrentPosition(
+        function(p){ ok({ lat:p.coords.latitude, lng:p.coords.longitude, acc:Math.round(p.coords.accuracy) }); },
+        function(e){ ok({ error:e.code }); },
+        { enableHighAccuracy:false, timeout:12000, maximumAge:60000 });
+    });
+  }
+  async function enableLoc(){
+    locOn = true; loc = null; renderChips();
+    var r = await getLoc();
+    if (r.lat !== undefined) loc = r;
+    else {
+      locOn = false;
+      addErr(r.error === 1 ? 'Izin lokasi ditolak. Aktifkan di Pengaturan iPhone > Privasi > Layanan Lokasi > Situs Web Safari.' : 'Lokasi tidak bisa didapat. Pastikan GPS menyala dan coba lagi.');
+    }
+    renderChips();
+  }
+
+  /* ---------- kirim ---------- */
+  function shouldSearchWeb(q){
+    var s = String(q || '').toLowerCase();
+    return /\b(sekarang|terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|tahun ini|update|berita|harga|tarif|biaya|kurs|nilai tukar|jadwal|skor|hasil pertandingan|cuaca|prakiraan|alamat|lokasi|jam buka|peraturan terbaru|undang-undang terbaru|regulasi terbaru|rilis terbaru|versi terbaru|sumber|referensi|riset|penelitian terbaru|bandingkan|telusuri|cari di internet|cari di web)\b/.test(s) || /https?:\/\//i.test(s);
+  }
+
+  function errorText(status, msg, webActive){
+    var hint = imageMode ? ' Model gambar sering butuh akun berbayar. Cek nama model gambar di Pengaturan.' : '';
+    if (status === 400 && /API key/i.test(msg)) return 'API key tidak valid. Periksa lagi di Pengaturan.';
+    if (!imageMode && (locOn || searchOn || webActive) && (status === 400 || status === 403 || status === 429)) hint = ' Fitur Lokasi atau pencarian web mungkin tidak tersedia pada kuota atau akses API saat ini. Coba lagi nanti atau periksa akses API.';
+    if (status === 403) return 'API key ditolak atau tidak punya akses ke model ini.' + hint;
+    if (status === 404) return 'Model tidak ditemukan. Ganti nama model di Pengaturan.' + hint;
+    if (status === 413) return 'Lampiran terlalu besar. Kurangi ukuran file atau buka Chat baru.';
+    if (status === 429) return 'Batas pemakaian gratis tercapai. Tunggu satu menit lalu coba lagi.' + hint;
+    return 'Terjadi kesalahan (' + status + '). ' + msg + hint;
+  }
+  function toContents(msgs){
+    return msgs.map(function(m){
+      return { role:m.role, parts: m.parts.map(function(p){ return (p.inlineData && m.role === 'model') ? { text:'[gambar]' } : p; }) };
+    });
+  }
+
+  async function send(){
+    var q = text.value.trim();
+    if ((!q && !pending.length) || busy) return;
+    if (!cfg.key){ openSettings(); return; }
+    if (imageMode && !q){ addErr('Tulis dulu gambar apa yang mau dibuat.'); return; }
+    busy = true; sendBtn.disabled = true;
+    var files = pending, asImage = imageMode;
+    var useWeb = !asImage && (searchOn || shouldSearchWeb(q));
+    pending = []; renderChips();
+    text.value = ''; text.style.height = 'auto';
+
+    var c = getChat(), fresh = false;
+    if (!c){ c = { id:'c'+Date.now(), title:(q || files[0].name).slice(0,40), msgs: [] }; chats.push(c); cur = c.id; fresh = true; }
+    var parts = files.map(function(f){ return f.part; });
+    parts.push({ text: q || 'Tolong baca lampiran ini dan jelaskan isinya.' });
+    c.msgs.push({ role:'user', q:q, parts:parts, att: files.map(function(f){ return { name:f.name, preview:f.preview }; }) });
+    render();
+    Eyes.lock(files.length ? 'analyze' : 'think');
+    var wait = el('div','msg bot typing'); wrap.appendChild(wait);
+    wait.innerHTML = logo(22) + '<span></span>';
+    var txt = wait.lastChild;
+    var ph = [], stTimer = null, pi = 0;
+    if (asImage){
+      if (files.length) ph.push(['Membaca foto...', 1800, 'analyze']);
+      ph.push(['Memahami permintaan...', 2000, 'think'], ['Membuat gambar...', 7000, 'think'], ['Menyempurnakan detail...', 0, 'analyze']);
+    } else {
+      if (files.length) ph.push(['Membaca lampiran...', 1800, 'analyze'], ['Menganalisis lampiran...', 3000, 'analyze']);
+      ph.push(['Berpikir...', 1800, 'think']);
+      if (locOn) ph.push(['Memeriksa lokasimu...', 2200, 'search']);
+      if (useWeb) ph.push(['Menelusuri web...', 3500, 'search'], ['Membaca dan membandingkan sumber...', 2500, 'analyze']);
+      ph.push(['Menulis jawaban...', 0, 'write']);
+    }
+    (function showPhase(){
+      var cur = ph[pi]; txt.textContent = cur[0]; Eyes.lock(cur[2]);
+      if (cur[1] && pi < ph.length - 1){ pi++; stTimer = setTimeout(showPhase, cur[1]); }
+    })();
+    chatEl.scrollTop = chatEl.scrollHeight;
+    if (locOn && !asImage){ var r2 = await getLoc(); if (r2.lat !== undefined) loc = r2; }
+    var model = asImage ? cfg.imgmodel : (useWeb && /^gemini-[34]/.test(cfg.model) ? 'gemini-2.5-flash' : cfg.model);
+    var styleGuide = '\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
+    var sysText = cfg.sys + styleGuide + (locOn && loc ? '\nLokasi GPS pengguna saat ini: ' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5) + ' (akurasi sekitar ' + loc.acc + ' m). Pakai ini bila pertanyaan menyangkut tempat atau jarak.' : '');
+    var body = asImage
+      ? { contents:[{ role:'user', parts:parts }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } }
+      : { system_instruction:{ parts:[{ text: sysText }] }, contents: toContents(c.msgs) };
+    if (!asImage){
+      var tools = [];
+      if (useWeb) tools.push({ google_search:{} }, { url_context:{} });
+      if (locOn && loc){ tools.push({ googleMaps:{} }); body.toolConfig = { retrievalConfig:{ latLng:{ latitude:loc.lat, longitude:loc.lng } } }; }
+      if (tools.length) body.tools = tools;
+    }
+    try {
+      var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-goog-api-key': cfg.key },
+        body: JSON.stringify(body)
+      });
+      var data = await res.json().catch(function(){ return {}; });
+      if (!res.ok){
+        fail(errorText(res.status, (data.error && data.error.message) || '', useWeb));
+      } else {
+        var got = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+        var keep = (got || []).filter(function(p){ return !p.thought && (p.text || p.inlineData); });
+        if (!keep.length) keep = [{ text:'Bot tidak memberi jawaban (mungkin diblokir filter keamanan). Coba ubah permintaannya.' }];
+        var src = [], gm = data.candidates && data.candidates[0] && data.candidates[0].groundingMetadata;
+        ((gm && gm.groundingChunks) || []).forEach(function(ch){
+          var w = ch.web || ch.maps;
+          if (w && /^https?:\/\//.test(w.uri || '') && src.length < 6 && !src.some(function(z){ return z.uri === w.uri; })) src.push({ title: w.title || w.uri, uri: w.uri });
+        });
+        c.msgs.push({ role:'model', parts:keep, src:src });
+        Eyes.unlock(); Eyes.aha(); Eyes.pulse('write', 2600);
+        persist(); render(true);
+      }
+    } catch(err){
+      fail('Tidak bisa terhubung. Periksa koneksi internet kamu.');
+    }
+    function fail(msg){
+      c.msgs.pop();
+      if (fresh){ chats = chats.filter(function(k){ return k.id !== c.id; }); cur = null; }
+      persist(); render(); addErr(msg);
+      text.value = q; pending = files; renderChips();
+    }
+    clearTimeout(stTimer);
+    if (Eyes.isLocked()) Eyes.unlock();
+    busy = false; sendBtn.disabled = false; text.focus();
+  }
+
+  /* ---------- menu & pengaturan ---------- */
+  function closeMenu(){ document.body.classList.remove('open'); }
+  function openSettings(){
+    $('key').value = cfg.key; $('model').value = cfg.model; $('imgmodel').value = cfg.imgmodel; $('sys').value = cfg.sys;
+    closeMenu(); dlg.showModal();
+  }
+
+  $('plusBtn').addEventListener('click', function(e){ e.stopPropagation(); $('menu').classList.toggle('on'); });
+  document.addEventListener('click', function(){ $('menu').classList.remove('on'); });
+  $('mFile').addEventListener('click', function(){ $('fileIn').click(); });
+  $('mCam').addEventListener('click', function(){ $('camIn').click(); });
+  $('mImg').addEventListener('click', function(){ imageMode = !imageMode; renderChips(); text.focus(); });
+  [$('fileIn'), $('camIn')].forEach(function(inp){
+    inp.addEventListener('change', function(){ var fl = Array.prototype.slice.call(inp.files); inp.value = ''; onFiles(fl); });
+  });
+  $('mLens').addEventListener('click', function(){ $('lensDlg').showModal(); });
+  $('lensCancel').addEventListener('click', function(){ $('lensDlg').close(); });
+  Array.prototype.forEach.call(document.querySelectorAll('#lensDlg button[data-p]'), function(b){
+    b.addEventListener('click', function(){ lensPrompt = b.getAttribute('data-p'); lensWeb = b.getAttribute('data-web') === '1'; $('lensDlg').close(); $('lensIn').click(); });
+  });
+  $('lensIn').addEventListener('change', function(){
+    var fl = Array.prototype.slice.call($('lensIn').files); $('lensIn').value = '';
+    onFiles(fl).then(function(){
+      if (!pending.length) return;
+      if (lensWeb){ searchOn = true; renderChips(); }
+      text.value = lensPrompt; send();
+    });
+  });
+  $('mLoc').addEventListener('click', function(){ if (locOn){ locOn = false; renderChips(); } else enableLoc(); });
+  $('mWeb').addEventListener('click', function(){ searchOn = !searchOn; renderChips(); });
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null, listening = false;
+  if (!SR) $('micBtn').style.display = 'none';
+  else $('micBtn').addEventListener('click', function(){
+    if (listening){ rec.stop(); return; }
+    rec = new SR(); rec.lang = 'id-ID'; rec.interimResults = true; rec.continuous = false;
+    var base = text.value ? text.value + ' ' : '';
+    rec.onresult = function(e){
+      var t = ''; for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      text.value = base + t; text.dispatchEvent(new Event('input'));
+    };
+    rec.onend = function(){ listening = false; $('micBtn').classList.remove('on'); };
+    rec.onerror = function(e){
+      listening = false; $('micBtn').classList.remove('on');
+      if (e.error === 'not-allowed') addErr('Izin mikrofon ditolak. Aktifkan di Pengaturan iPhone untuk Safari.');
+    };
+    try { rec.start(); listening = true; $('micBtn').classList.add('on'); } catch(x){}
+  });
+  $('form').addEventListener('submit', function(e){ e.preventDefault(); send(); });
+  text.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(min-width: 861px)').matches){ e.preventDefault(); send(); }
+  });
+  text.addEventListener('input', function(){ Eyes.pulse('write', 1400); text.style.height = 'auto'; text.style.height = Math.min(text.scrollHeight, 160) + 'px'; });
+  $('menuBtn').addEventListener('click', function(){ document.body.classList.add('open'); });
+  $('scrim').addEventListener('click', closeMenu);
+  $('newBtn').addEventListener('click', function(){ cur = null; persist(); render(); closeMenu(); text.focus(); });
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('cancelBtn').addEventListener('click', function(){ dlg.close(); });
+  $('saveBtn').addEventListener('click', function(){
+    cfg.key = $('key').value.trim();
+    cfg.model = $('model').value.trim() || DEFAULTS.model;
+    cfg.imgmodel = $('imgmodel').value.trim() || 'gemini-3.1-flash-image';
+    cfg.sys = $('sys').value.trim() || DEFAULTS.sys;
+    save('gem_key', cfg.key); save('gem_model', cfg.model); save('gem_sys', cfg.sys); save('gem_imgmodel', cfg.imgmodel);
+    dlg.close(); render();
+  });
+
+  $('brand').innerHTML = logo(30) + '<span>martaedhyx</span>';
+  render();
+  setInterval(updateGreeting, 12000);
+  // Pengaturan API tidak dibuka otomatis agar sapaan langsung terlihat saat halaman dimuat.
+})();
 </script>
 </body>
 </html>
