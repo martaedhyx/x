@@ -147,7 +147,22 @@
       var lang = pre.querySelector('.code-lang'), code = pre.querySelector('code');
       var type = lang ? (lang.textContent || '').trim().toLowerCase() : '';
       if (!code) return;
-      if (type === 'edhychart') {
+      if (type === 'mermaid' || type === 'edhydiagram') {
+        pre.dataset.edhyDone = '1';
+        var diagram = document.createElement('div');
+        diagram.style.cssText = 'width:100%;overflow-x:auto;margin:12px 0;padding:12px;border:1px solid #343434;border-radius:12px;background:#101010';
+        var graph = document.createElement('div');
+        graph.className = 'mermaid';
+        graph.textContent = code.textContent;
+        diagram.appendChild(graph);
+        pre.parentNode.replaceChild(diagram, pre);
+        if (window.mermaid) {
+          try {
+            window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'dark' });
+            window.mermaid.run({ nodes: [graph] }).catch(function () { graph.textContent = 'Diagram tidak dapat dirender. Periksa sintaks diagram.'; });
+          } catch (e) { graph.textContent = 'Diagram tidak dapat dirender.'; }
+        } else graph.textContent = 'Pustaka diagram belum termuat. Periksa koneksi internet.';
+      } else if (type === 'edhychart') {
         var data = parseJSON(code.textContent);
         if (!data || !Array.isArray(data.labels) || !Array.isArray(data.datasets)) return;
         pre.dataset.edhyDone = '1';
