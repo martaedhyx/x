@@ -804,7 +804,7 @@ input, textarea{font-size:17.6px!important}
         return;
       }
 
-      var model = asImage ? cfg.imgmodel : (useWeb && /^gemini-[34]/.test(cfg.model) ? 'gemini-2.5-flash' : cfg.model);
+      var model = asImage ? cfg.imgmodel : cfg.model;
       var styleGuide = '\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
       var sysText = cfg.sys + styleGuide + (locOn && loc ? '\nLokasi GPS pengguna saat ini: ' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5) + ' (akurasi sekitar ' + loc.acc + ' m). Pakai ini bila pertanyaan menyangkut tempat atau jarak.' : '');
       var body = asImage
@@ -824,6 +824,13 @@ input, textarea{font-size:17.6px!important}
         signal: activeRequest.signal
       });
       var data = await res.json().catch(function(){ return {}; });
+      // Abaikan hasil yang datang setelah pengguna menekan Stop.
+      if (!activeRequest || activeRequest.signal.aborted){
+        if (wait.parentNode) wait.parentNode.removeChild(wait);
+        persist();
+        text.value = q; pending = files; renderChips();
+        return;
+      }
       if (!res.ok){
         fail(errorText(res.status, (data.error && data.error.message) || '', useWeb));
       } else {
