@@ -192,6 +192,8 @@ input, textarea{font-size:16px!important}
 .msg.bot pre .code-copy{border-color:#f4f8ff!important;color:#ffffff!important;box-shadow:0 0 5px rgba(255,255,255,.22)}
 .msg.bot pre .code-copy:hover{background:#ffffff!important;color:#05070b!important}
 
+.clear-history{display:block;width:calc(100% - 20px);margin:0 10px 8px;padding:6px 9px;text-align:left;font-size:12px!important;line-height:1.35;border:1px solid #292929;border-radius:8px;color:rgba(255,255,255,.62);background:transparent}
+.clear-history:hover{color:#ff7777;border-color:#713b3b;background:#160b0b}
 /* Pengaturan disembunyikan sementara; tombol dan fiturnya tetap ada */
 #settingsBtn{display:none!important}
 
@@ -202,6 +204,7 @@ input, textarea{font-size:16px!important}
 <aside id="side" aria-label="Menu">
   <div class="brand" id="brand"></div>
   <button class="newbtn" id="newBtn" type="button"><i>+</i> Chat baru</button>
+  <button class="clear-history" id="clearHistoryBtn" type="button">Hapus riwayat chat</button>
   <div class="lbl">Riwayat</div>
   <ul id="list"></ul>
   <button class="foot" id="settingsBtn" type="button">Pengaturan</button>
@@ -858,6 +861,11 @@ input, textarea{font-size:16px!important}
   $('menuBtn').addEventListener('click', function(){ document.body.classList.add('open'); });
   $('scrim').addEventListener('click', closeMenu);
   $('newBtn').addEventListener('click', function(){ cur = null; persist(); render(); closeMenu(); text.focus(); });
+  $('clearHistoryBtn').addEventListener('click', function(){
+    if (!chats.length){ alert('Riwayat chat masih kosong.'); return; }
+    if (!confirm('Hapus semua riwayat chat? Tindakan ini tidak bisa dibatalkan.')) return;
+    chats = []; cur = null; persist(); render(); closeMenu();
+  });
   $('settingsBtn').addEventListener('click', openSettings);
   $('cancelBtn').addEventListener('click', function(){ dlg.close(); });
   $('saveBtn').addEventListener('click', function(){
