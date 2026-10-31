@@ -31,9 +31,9 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 #side{width:288px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;
   padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:30}
 .brand{display:flex;align-items:center;gap:10px;font:600 21px var(--serif);padding:6px 10px 14px}
-.newbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;font-weight:600;color:var(--accent)}
+.newbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;font-weight:600;color:#fff;background:#000}
 .newbtn:hover,.ci:hover,.foot:hover{background:var(--hover)}
-.newbtn i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-style:normal;font-size:18px;line-height:1}
+.newbtn i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #fff;background:#000;color:#fff;font-style:normal;font-size:18px;line-height:1}
 .lbl{color:var(--muted);font-size:13px;padding:16px 10px 6px}
 #list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
 #list li{display:flex;align-items:center;border-radius:10px}
@@ -80,7 +80,7 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 .box{max-width:720px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:10px;display:flex;align-items:flex-end;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .box:focus-within{border-color:var(--accent)}
 .box textarea{flex:1;resize:none;border:0;background:none;color:var(--ink);font:16px/1.5 var(--sans);padding:6px 0;max-height:160px;outline:none}
-#sendBtn{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex-shrink:0}
+#sendBtn{width:36px;height:36px;border-radius:50%;background:#000;color:#000;display:grid;place-items:center;flex-shrink:0}
 #sendBtn:disabled{opacity:.4;cursor:default}
 .box{position:relative}
 #plusBtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:22px;line-height:1;flex-shrink:0;color:var(--ink)}
