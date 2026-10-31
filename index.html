@@ -7,9 +7,11 @@
 <meta name="application-name" content="EdhyX">
 <meta name="apple-mobile-web-app-title" content="EdhyX">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<!-- FIX #4: tambah mobile-web-app-capable untuk Chrome Android -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<!-- FIX #3: hapus <link rel="icon" type="image/svg+xml" href="./icon.svg"> duplikat -->
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>martaedhyx</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='black'/%3E%3Ccircle cx='50' cy='50' r='40' fill='white'/%3E%3Crect x='30.5' y='31' width='9' height='28' rx='4.5'/%3E%3Crect x='60.5' y='31' width='9' height='28' rx='4.5'/%3E%3C/svg%3E">
@@ -431,11 +433,17 @@ input, textarea{font-size:17.6px!important}
 
   /* ---------- tampilan teks ---------- */
   function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */
   function inline(s){
     return s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,function(_,label,url){
-      var host=''; try{host=new URL(url).hostname;}catch(e){}
+      // url di sini sudah ter-escape oleh esc(), decode dulu untuk parsing hostname
+      var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+      var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
-      return '<a class="md-link" href="'+url+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
+      // escape " dan ' agar tidak bisa break-out dari atribut href
+      var safeUrl = url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      return '<a class="md-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
     }).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
   }
   function blocks(t){
@@ -732,11 +740,14 @@ input, textarea{font-size:17.6px!important}
     });
   }
 
+  /* FIX #1: seluruh body send() dibungkus try/catch/finally agar busy & UI selalu reset,
+     dan aborted-check diganti 'return' bersih (tidak melempar error di luar try). */
   async function send(){
     var q = text.value.trim();
     if ((!q && !pending.length) || busy) return;
     if (!cfg.key){ openSettings(); return; }
     if (imageMode && !q){ addErr('Tulis dulu gambar apa yang mau dibuat.'); return; }
+
     busy = true; activeRequest = new AbortController(); setSendState(true);
     var files = pending, asImage = imageMode;
     var useWeb = !asImage && (searchOn || shouldSearchWeb(q));
@@ -750,6 +761,7 @@ input, textarea{font-size:17.6px!important}
     c.msgs.push({ role:'user', q:q, parts:parts, att: files.map(function(f){ return { name:f.name, preview:f.preview }; }) });
     render();
     Eyes.lock(files.length ? 'analyze' : 'think');
+
     var wait = el('div','msg bot typing'); wrap.appendChild(wait);
     wait.innerHTML = logo(21.3) + '<span></span>';
     var txt = wait.lastChild;
@@ -765,25 +777,46 @@ input, textarea{font-size:17.6px!important}
       ph.push(['menulis jawaban...', 0, 'write']);
     }
     (function showPhase(){
-      var cur = ph[pi]; txt.textContent = cur[0]; Eyes.lock(cur[2]);
-      if (cur[1] && pi < ph.length - 1){ pi++; stTimer = setTimeout(showPhase, cur[1]); }
+      var cur2 = ph[pi]; txt.textContent = cur2[0]; Eyes.lock(cur2[2]);
+      if (cur2[1] && pi < ph.length - 1){ pi++; stTimer = setTimeout(showPhase, cur2[1]); }
     })();
     chatEl.scrollTop = chatEl.scrollHeight;
-    if (locOn && !asImage){ var r2 = await getLoc(); if (r2.lat !== undefined) loc = r2; }
-    if (activeRequest.signal.aborted) throw new DOMException('Dibatalkan pengguna','AbortError');
-    var model = asImage ? cfg.imgmodel : (useWeb && /^gemini-[34]/.test(cfg.model) ? 'gemini-2.5-flash' : cfg.model);
-    var styleGuide = '\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
-    var sysText = cfg.sys + styleGuide + (locOn && loc ? '\nLokasi GPS pengguna saat ini: ' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5) + ' (akurasi sekitar ' + loc.acc + ' m). Pakai ini bila pertanyaan menyangkut tempat atau jarak.' : '');
-    var body = asImage
-      ? { contents:[{ role:'user', parts:parts }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } }
-      : { system_instruction:{ parts:[{ text: sysText }] }, contents: toContents(c.msgs) };
-    if (!asImage){
-      var tools = [];
-      if (useWeb) tools.push({ google_search:{} }, { url_context:{} });
-      if (locOn && loc){ tools.push({ googleMaps:{} }); body.toolConfig = { retrievalConfig:{ latLng:{ latitude:loc.lat, longitude:loc.lng } } }; }
-      if (tools.length) body.tools = tools;
+
+    // helper di-hoist supaya bisa dipakai di catch
+    function fail(msg){
+      c.msgs.pop();
+      if (fresh){ chats = chats.filter(function(k){ return k.id !== c.id; }); cur = null; }
+      persist(); render(); addErr(msg);
+      text.value = q; pending = files; renderChips();
     }
+
     try {
+      if (locOn && !asImage){
+        var r2 = await getLoc();
+        if (r2.lat !== undefined) loc = r2;
+      }
+
+      // FIX: kalau dibatalkan, cleanup lalu return (tidak melempar error ke luar try)
+      if (!activeRequest || activeRequest.signal.aborted){
+        if (wait.parentNode) wait.parentNode.removeChild(wait);
+        persist();
+        text.value = q; pending = files; renderChips();
+        return;
+      }
+
+      var model = asImage ? cfg.imgmodel : (useWeb && /^gemini-[34]/.test(cfg.model) ? 'gemini-2.5-flash' : cfg.model);
+      var styleGuide = '\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
+      var sysText = cfg.sys + styleGuide + (locOn && loc ? '\nLokasi GPS pengguna saat ini: ' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5) + ' (akurasi sekitar ' + loc.acc + ' m). Pakai ini bila pertanyaan menyangkut tempat atau jarak.' : '');
+      var body = asImage
+        ? { contents:[{ role:'user', parts:parts }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } }
+        : { system_instruction:{ parts:[{ text: sysText }] }, contents: toContents(c.msgs) };
+      if (!asImage){
+        var tools = [];
+        if (useWeb) tools.push({ google_search:{} }, { url_context:{} });
+        if (locOn && loc){ tools.push({ googleMaps:{} }); body.toolConfig = { retrievalConfig:{ latLng:{ latitude:loc.lat, longitude:loc.lng } } }; }
+        if (tools.length) body.tools = tools;
+      }
+
       var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'x-goog-api-key': cfg.key },
@@ -812,18 +845,16 @@ input, textarea{font-size:17.6px!important}
         persist();
         text.value = q; pending = files; renderChips();
       } else {
-        fail('Tidak bisa terhubung. Periksa koneksi internet kamu.');
+        console.error('[send]', err);
+        try { fail('Tidak bisa terhubung. Periksa koneksi internet kamu.'); } catch(e){}
       }
+    } finally {
+      // FIX: SELALU reset state, apa pun yang terjadi (sukses/gagal/abort)
+      clearTimeout(stTimer);
+      if (Eyes.isLocked()) Eyes.unlock();
+      busy = false; activeRequest = null; setSendState(false);
+      text.focus();
     }
-    function fail(msg){
-      c.msgs.pop();
-      if (fresh){ chats = chats.filter(function(k){ return k.id !== c.id; }); cur = null; }
-      persist(); render(); addErr(msg);
-      text.value = q; pending = files; renderChips();
-    }
-    clearTimeout(stTimer);
-    if (Eyes.isLocked()) Eyes.unlock();
-    busy = false; activeRequest = null; setSendState(false); text.focus();
   }
 
   /* ---------- menu & pengaturan ---------- */
@@ -852,7 +883,7 @@ input, textarea{font-size:17.6px!important}
       if (!pending.length) return;
       if (lensWeb){ searchOn = true; renderChips(); }
       text.value = lensPrompt; send();
-    });
+    }).catch(function(e){ console.error('[lens]', e); });
   });
   $('mLoc').addEventListener('click', function(){ if (locOn){ locOn = false; renderChips(); } else enableLoc(); });
   $('mWeb').addEventListener('click', function(){ searchOn = !searchOn; renderChips(); });
@@ -904,7 +935,6 @@ input, textarea{font-size:17.6px!important}
   $('brand').innerHTML = logo(30) + '<span>martaedhyx</span>';
   render();
   setInterval(updateGreeting, 12000);
-  // Pengaturan API tidak dibuka otomatis agar sapaan langsung terlihat saat halaman dimuat.
 })();
 </script>
 <script src="./patch.js?v=4"></script>
