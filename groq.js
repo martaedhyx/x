@@ -44,11 +44,12 @@
     return new Response(JSON.stringify({ candidates:[{ content:{ parts:[{ text:t }] } }] }),
       { status:200, headers:{ 'Content-Type':'application/json' } });
   }
-  async function groq(b){
+  async function groq(b, signal){
     var r = await window.fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + qkey() },
-      body:JSON.stringify(toGroq(b))
+      body:JSON.stringify(toGroq(b)),
+      signal:signal
     });
     var j = await r.json().catch(function(){ return {}; });
     if (!r.ok) throw new Error((j.error && j.error.message) || ('HTTP ' + r.status));
@@ -78,20 +79,20 @@
 
     /* Mode Groq: coba Groq lebih dahulu. Mode Otomatis: Gemini tetap utama. */
     if (preferGroq){
-      try { var first = await groq(b); note('Groq'); return fake(first); }
-      catch(e){ tried = true; }
+      try { var first = await groq(b, o.signal); note('Groq'); return fake(first); }
+      catch(e){ if (o.signal && o.signal.aborted) throw e; tried = true; }
     }
 
     var r, err;
     try {
       r = await patchedFetch(u, o);
       if (await hasGeminiAnswer(r)){ note('Gemini'); return r; }
-    } catch(e){ err = e; }
+    } catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
 
     /* Cadangan Groq hanya untuk chat teks tanpa gambar atau tools khusus Gemini. */
-    if (canQ && !tried){
-      try { var backup = await groq(b); note('Groq'); return fake(backup); }
-      catch(e){}
+    if (canQ && !tried && !(o.signal && o.signal.aborted)){
+      try { var backup = await groq(b, o.signal); note('Groq'); return fake(backup); }
+      catch(e){ if (o.signal && o.signal.aborted) throw e; }
     }
     if (r) return r;
     throw err || new Error('Gemini dan Groq tidak dapat dihubungi.');
