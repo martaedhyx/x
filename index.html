@@ -143,6 +143,55 @@ dialog input,dialog textarea{width:100%;background:var(--bg);color:var(--ink);bo
 .msg.user,.msg.bot,.msg.bot h2,.msg.bot h3,.msg.bot h4{font-size:16px!important}
 /* Cegah auto-zoom Safari iPhone saat kolom teks disentuh; pinch zoom tetap aktif */
 input, textarea{font-size:16px!important}
+
+/* Terminal kode: warna sintaks neon tajam — hanya area blok kode */
+.msg.bot pre{
+  background:#05070b!important;
+  border:1px solid #f4f8ff!important;
+  box-shadow:0 0 3px rgba(255,255,255,.95),0 0 10px rgba(255,255,255,.22),inset 0 0 12px rgba(255,255,255,.035)!important;
+  color:#f4f7ff!important;
+  text-shadow:0 0 2px rgba(255,255,255,.22);
+  -webkit-font-smoothing:antialiased;
+}
+.msg.bot pre code{
+  color:#f4f7ff!important;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;
+  font-size:13px!important;
+  line-height:1.65!important;
+}
+.msg.bot pre .hljs-keyword,
+.msg.bot pre .hljs-selector-tag,
+.msg.bot pre .hljs-literal,
+.msg.bot pre .hljs-meta .hljs-keyword,
+.msg.bot pre .hljs-doctag{color:#ff365f!important;text-shadow:0 0 5px rgba(255,54,95,.42)}
+.msg.bot pre .hljs-title,
+.msg.bot pre .hljs-title.function_,
+.msg.bot pre .hljs-function .hljs-title,
+.msg.bot pre .hljs-attr,
+.msg.bot pre .hljs-attribute,
+.msg.bot pre .hljs-property,
+.msg.bot pre .hljs-selector-id,
+.msg.bot pre .hljs-selector-class{color:#35baff!important;text-shadow:0 0 5px rgba(53,186,255,.4)}
+.msg.bot pre .hljs-string,
+.msg.bot pre .hljs-regexp,
+.msg.bot pre .hljs-template-variable,
+.msg.bot pre .hljs-addition{color:#42f58d!important;text-shadow:0 0 5px rgba(66,245,141,.38)}
+.msg.bot pre .hljs-number,
+.msg.bot pre .hljs-symbol,
+.msg.bot pre .hljs-bullet{color:#ffd166!important}
+.msg.bot pre .hljs-built_in,
+.msg.bot pre .hljs-type,
+.msg.bot pre .hljs-class .hljs-title{color:#c6a0ff!important}
+.msg.bot pre .hljs-comment,
+.msg.bot pre .hljs-quote{color:#9aa7b8!important;font-style:italic}
+.msg.bot pre .hljs-variable,
+.msg.bot pre .hljs-params,
+.msg.bot pre .hljs-name,
+.msg.bot pre .hljs-tag{color:#f4f7ff!important}
+.msg.bot pre .code-lang{color:#ffffff!important;text-shadow:0 0 6px rgba(255,255,255,.5)}
+.msg.bot pre .code-copy{border-color:#f4f8ff!important;color:#ffffff!important;box-shadow:0 0 5px rgba(255,255,255,.22)}
+.msg.bot pre .code-copy:hover{background:#ffffff!important;color:#05070b!important}
+
 </style>
 </head>
 <body>
