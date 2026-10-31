@@ -607,7 +607,7 @@ input, textarea{font-size:16px!important}
     wrap.innerHTML = '';
     if (!c || !c.msgs.length){
       var h = el('div','hello');
-      h.innerHTML = logo(36) + '<h1 id="greeting"></h1>';
+      h.innerHTML = logo(43.2) + '<h1 id="greeting"></h1>';
       updateGreeting();
       wrap.appendChild(h);
     } else {
@@ -752,7 +752,7 @@ input, textarea{font-size:16px!important}
     render();
     Eyes.lock(files.length ? 'analyze' : 'think');
     var wait = el('div','msg bot typing'); wrap.appendChild(wait);
-    wait.innerHTML = logo(22) + '<span></span>';
+    wait.innerHTML = logo(17.6) + '<span></span>';
     var txt = wait.lastChild;
     var ph = [], stTimer = null, pi = 0;
     if (asImage){
