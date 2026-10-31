@@ -197,8 +197,9 @@ input, textarea{font-size:16px!important}
 /* Pengaturan disembunyikan sementara; tombol dan fiturnya tetap ada */
 #settingsBtn{display:none!important}
 
-/* Perkecil hanya teks status proses: berpikir, mencari web, menganalisis, dan menulis */
-.msg.bot.typing > span{font-size:12px!important;line-height:1.35!important}
+/* Semua teks indikator proses dibuat kecil dan seragam; hanya area status saat menunggu */
+.msg.bot.typing,.msg.bot.typing *{font-size:11px!important;line-height:1.35!important}
+.msg.bot.typing .logo{font-size:initial!important}
 </style>
 </head>
 <body>
