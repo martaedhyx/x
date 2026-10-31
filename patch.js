@@ -152,7 +152,7 @@
         if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
         if (!body.system_instruction.parts || !body.system_instruction.parts.length) body.system_instruction.parts = [{ text: '' }];
         body.system_instruction.parts[0].text +=
-          '\\n\\nKONTEKS WAKTU LOKAL PENGGUNA (otomatis saat pesan dikirim): ' + localStamp +
+          '\n\nKONTEKS WAKTU LOKAL PENGGUNA (otomatis saat pesan dikirim): ' + localStamp +
           '. Zona waktu perangkat: ' + zone +
           '. Gunakan informasi ini untuk menjawab pertanyaan tentang jam, tanggal, hari, besok, kemarin, dan hitung mundur. Ini adalah waktu dari jam perangkat pengguna; jangan mengklaim telah menyinkronkannya dengan jam atomik/internet.';
       } catch (e) {}
