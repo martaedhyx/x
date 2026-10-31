@@ -27,6 +27,8 @@ function verify(token) {
   } catch { return null; }
 }
 
+export const config = { maxDuration: 30 };
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", ORIGIN);
   res.setHeader("Vary", "Origin");
