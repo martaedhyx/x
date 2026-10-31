@@ -198,7 +198,7 @@ input, textarea{font-size:16px!important}
 #settingsBtn{display:none!important}
 
 /* Semua teks indikator proses dibuat kecil dan seragam; hanya area status saat menunggu */
-.msg.bot.typing,.msg.bot.typing *{font-size:11px!important;line-height:1.35!important}
+.msg.bot.typing,.msg.bot.typing *{font-size:10px!important;line-height:1.3!important}
 .msg.bot.typing .logo{font-size:initial!important}
 </style>
 </head>
@@ -759,11 +759,11 @@ input, textarea{font-size:16px!important}
       if (files.length) ph.push(['Membaca foto...', 1800, 'analyze']);
       ph.push(['Memahami permintaan...', 2000, 'think'], ['Membuat gambar...', 7000, 'think'], ['Menyempurnakan detail...', 0, 'analyze']);
     } else {
-      if (files.length) ph.push(['Membaca lampiran...', 1800, 'analyze'], ['Menganalisis lampiran...', 3000, 'analyze']);
-      ph.push(['Berpikir...', 1800, 'think']);
+      if (files.length) ph.push(['membaca lampiran...', 1800, 'analyze'], ['menganalisis lampiran...', 3000, 'analyze']);
+      ph.push(['berpikir...', 1800, 'think']);
       if (locOn) ph.push(['Memeriksa lokasimu...', 2200, 'search']);
-      if (useWeb) ph.push(['Menelusuri web...', 3500, 'search'], ['Membaca dan membandingkan sumber...', 2500, 'analyze']);
-      ph.push(['Menulis jawaban...', 0, 'write']);
+      if (useWeb) ph.push(['menelusuri web...', 3500, 'search'], ['membaca dan membandingkan sumber...', 2500, 'analyze']);
+      ph.push(['menulis jawaban...', 0, 'write']);
     }
     (function showPhase(){
       var cur = ph[pi]; txt.textContent = cur[0]; Eyes.lock(cur[2]);
