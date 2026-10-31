@@ -5,10 +5,10 @@
   window.__edhyVisualEngineLoaded = true;
   var css = [
     '.edhy-table-wrap{width:100%;overflow-x:auto;margin:12px 0 16px;border:1px solid #343434;border-radius:12px;background:#0b0b0b}',
-    '.edhy-table{border-collapse:separate;border-spacing:0;width:100%;min-width:100%;table-layout:fixed;font:14px/1.55 system-ui,-apple-system,sans-serif!important;color:#f4f4f4}',
-    '.edhy-table th,.edhy-table td{padding:11px 12px;border-right:1px solid #303030;border-bottom:1px solid #303030;text-align:left;vertical-align:top;white-space:normal;overflow-wrap:anywhere;word-break:normal;min-width:0}',
-    '.edhy-table th:last-child,.edhy-table td:last-child{border-right:0}.edhy-table th{background:#242424;color:#fff;font-weight:700;letter-spacing:.01em}.edhy-table tbody tr:nth-child(even){background:#111}.edhy-table tbody tr:hover{background:#191919}.edhy-table tr:last-child td{border-bottom:0}',
-    '.edhy-table-wrap{max-width:100%;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#555 #111}',
+    '.edhy-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;max-width:none;table-layout:auto;font:13.5px/1.45 system-ui,-apple-system,sans-serif!important;color:#f4f4f4}',
+    '.edhy-table th,.edhy-table td{padding:8px 11px;border-right:1px solid #303030;border-bottom:1px solid #303030;text-align:left;vertical-align:middle;white-space:normal;overflow-wrap:break-word;word-break:normal;min-width:88px;max-width:280px}',
+    '.edhy-table th:last-child,.edhy-table td:last-child{border-right:0}.edhy-table th{background:#242424;color:#fff;font-weight:650;white-space:nowrap}.edhy-table tbody tr:nth-child(even){background:#111}.edhy-table tbody tr:hover{background:#191919}.edhy-table tr:last-child td{border-bottom:0}',
+    '.edhy-table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#555 #111}',
     '.edhy-tools{display:flex;flex-wrap:wrap;gap:7px;padding:8px 10px;border-top:1px solid #303030}',
     '.edhy-tool{display:inline-flex;align-items:center;gap:6px;border:1px solid #444;border-radius:8px;padding:6px 9px;font:600 12px system-ui,sans-serif!important;color:#fff;background:#171717;cursor:pointer}',
     '.edhy-file-card{display:flex;align-items:center;gap:12px;margin:12px 0;padding:13px;border:1px solid #343434;border-radius:13px;background:#101010}',
@@ -36,7 +36,6 @@
     var wrap = document.createElement('div'); wrap.className = 'edhy-table-wrap';
     var table = document.createElement('table'); table.className = 'edhy-table';
     var columnCount = Math.max((headers || []).length, 1);
-    if (columnCount > 3) table.style.minWidth = Math.min(columnCount * 150, 900) + 'px';
     if (headers && headers.length) {
       var thead = document.createElement('thead'), trh = document.createElement('tr');
       headers.forEach(function (v) { var th = document.createElement('th'); th.textContent = cellText(v); trh.appendChild(th); });
