@@ -139,7 +139,26 @@
     try { body = JSON.parse(opts.body); } catch (e) {}
 
     if (/^gemini-2\.5/.test(used)) { url = swap(url, model); used = model; }
-    if (body && !isImg) { if (await enrich(body)) opts = withBody(opts, body); }
+    if (body && !isImg) {
+      /* Waktu lokal perangkat: diperbarui setiap kali pengguna mengirim pesan. */
+      try {
+        var now = new Date();
+        var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        var localStamp = new Intl.DateTimeFormat('id-ID', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hourCycle: 'h23', timeZone: zone, timeZoneName: 'long'
+        }).format(now);
+        if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
+        if (!body.system_instruction.parts || !body.system_instruction.parts.length) body.system_instruction.parts = [{ text: '' }];
+        body.system_instruction.parts[0].text +=
+          '\\n\\nKONTEKS WAKTU LOKAL PENGGUNA (otomatis saat pesan dikirim): ' + localStamp +
+          '. Zona waktu perangkat: ' + zone +
+          '. Gunakan informasi ini untuk menjawab pertanyaan tentang jam, tanggal, hari, besok, kemarin, dan hitung mundur. Ini adalah waktu dari jam perangkat pengguna; jangan mengklaim telah menyinkronkannya dengan jam atomik/internet.';
+      } catch (e) {}
+      if (await enrich(body)) opts = withBody(opts, body);
+      else opts = withBody(opts, body);
+    }
 
     var res = await orig(url, opts);
     for (var i = 0; i < 2 && (res.status === 500 || res.status === 503); i++) {
