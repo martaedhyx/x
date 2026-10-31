@@ -1,5 +1,5 @@
 import Sandbox from "e2b";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 
 const ORIGIN = "https://martaedhyx.github.io";
 const MAX_COMMAND = 500;
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   try {
     if (action === "start") {
       const sandbox = await Sandbox.create();
-      const session = { id: sandbox.sandboxId, exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS, count: 0 };
+      const session = { id: sandbox.sandboxId, exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS, count: 0, cwd: "/home/user" };
       return res.status(200).json({
         token: sign(session),
         output: "Edhy Linux Sandbox siap. Coba perintah: pwd, ls, python --version, node --version",
@@ -79,14 +79,24 @@ export default async function handler(req, res) {
     if (session.count >= 40) return res.status(429).json({ error: "Batas 40 perintah per sesi tercapai. Buka sesi baru." });
 
     const sandbox = await Sandbox.connect(session.id);
-    const result = await sandbox.commands.run(command, { timeoutMs: 12000 });
+    const marker = "__EDHY_CWD_" + randomUUID().replace(/-/g, "") + "__";
+    const safeCwd = String(session.cwd || "/home/user").replace(/'/g, "'\\''");
+    const wrapped = "cd '" + safeCwd + "' || exit $?; {\\n" + command + "\\n}; printf '\\\\n" + marker + "%s\\\\n' \"$PWD\"";
+    const result = await sandbox.commands.run(wrapped, { timeoutMs: 12000 });
+    let stdout = String(result.stdout || "");
+    const markerAt = stdout.lastIndexOf(marker);
+    if (markerAt >= 0) {
+      const path = stdout.slice(markerAt + marker.length).trim().split(/\\r?\\n/)[0];
+      if (path.startsWith("/")) session.cwd = path.slice(0, 500);
+      stdout = stdout.slice(0, markerAt).replace(/\\n$/, "");
+    }
     session.count += 1;
     return res.status(200).json({
       token: sign(session),
-      stdout: String(result.stdout || "").slice(0, MAX_OUTPUT),
+      stdout: stdout.slice(0, MAX_OUTPUT),
       stderr: String(result.stderr || "").slice(0, MAX_OUTPUT),
       exitCode: result.exitCode,
-      cwd: result.cwd || ""
+      cwd: session.cwd
     });
   } catch (error) {
     const message = String(error?.message || "Eksekusi gagal").slice(0, 500);
