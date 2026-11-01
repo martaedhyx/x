@@ -505,7 +505,7 @@ input, textarea{font-size:17.6px!important}
       else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
       else if(!line.trim()){
         var nextLine=lines[i+1]||'';
-        if(!(mode==='ol' && /^\s*\d+[.)]\\s+/.test(nextLine))) close();
+        if(!(mode==='ol' && /^\s*\d+[.)]\s+/.test(nextLine))) close();
       }
       else{close();out+='<p>'+inline(line)+'</p>';}
     });close();return out;
