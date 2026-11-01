@@ -775,6 +775,22 @@ input, textarea{font-size:17.6px!important}
      dan aborted-check diganti 'return' bersih (tidak melempar error di luar try). */
   async function send(){
     var q = text.value.trim();
+    // Perintah lokal dijalankan sebelum pemeriksaan API/key agar tidak dijawab oleh model AI.
+    if (/^(edhy[, ]*)?(buka|tampilkan|jalankan) (komputer|edhyx computer)[.! ]*$/i.test(q)) {
+      text.value = ''; text.style.height = 'auto';
+      if (window.EdhyTerminal && typeof window.EdhyTerminal.openMonitoring === 'function') {
+        window.EdhyTerminal.openMonitoring();
+      } else {
+        addErr('Panel EdhyX Computer belum termuat. Muat ulang halaman lalu coba lagi.');
+      }
+      return;
+    }
+    if (/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i.test(q)) {
+      text.value = ''; text.style.height = 'auto';
+      if (window.EdhyTerminal && typeof window.EdhyTerminal.open === 'function') window.EdhyTerminal.open();
+      else addErr('Terminal belum termuat. Muat ulang halaman lalu coba lagi.');
+      return;
+    }
     if ((!q && !pending.length) || busy) return;
     if (!cfg.key){ openSettings(); return; }
     if (imageMode && !q){ addErr('Tulis dulu gambar apa yang mau dibuat.'); return; }
