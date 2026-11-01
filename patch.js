@@ -61,7 +61,7 @@
       return rows.map(function (r) {
         return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Artikel') +
           ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800);
-      }).join('\\n');
+      }).join('\n');
     });
   }
   function wiki(q, lang) {
@@ -116,7 +116,7 @@
       jobs.push(safe(research(q, 'read', pageUrl), 'Isi halaman web (Vercel)'));
     } else if (web || fact) {
       jobs.push(research(q, 'search').then(function (t) {
-        return t ? '[Artikel web/berita yang lolos pemeriksaan tautan]\\n' + t :
+        return t ? '[Artikel web/berita yang lolos pemeriksaan tautan]\n' + t :
           '[Sumber artikel spesifik tidak ditemukan] Hasil pencarian hanya berisi halaman umum/tag/kategori atau tidak memiliki isi artikel yang cukup. Jangan menyajikan klaim berita terkini sebagai fakta dan jangan membuat judul, tanggal, atau tautan sendiri. Katakan bahwa sumber artikel belum berhasil ditemukan.';
       }).catch(function (e) {
         return '[Pencarian web gagal] Backend Vercel: ' + String(e.message || e) + '. Jangan mengarang hasil atau sumber; jika Google Search tersedia, gunakan alat tersebut.';      }));
@@ -140,7 +140,7 @@
       if (!tp) return false;
       var ctx = await gather(tp.text);
       if (!ctx) return false;
-      var note = '\\n\\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk berita terkini, hanya gunakan artikel spesifik yang isi artikelnya relevan dan mendukung klaim. Jangan gunakan halaman tag, topik, kategori, hasil pencarian, atau beranda sebagai bukti berita. Setiap klaim penting harus diikuti tautan langsung ke artikel pendukung. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika sumber artikel spesifik tidak ditemukan atau data tidak mendukung klaim, katakan terus terang bahwa belum dapat diverifikasi. Tampilkan nama media normal tanpa awalan kata image atau kode ikon.\\n' + ctx;
+      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk berita terkini, hanya gunakan artikel spesifik yang isi artikelnya relevan dan mendukung klaim. Jangan gunakan halaman tag, topik, kategori, hasil pencarian, atau beranda sebagai bukti berita. Setiap klaim penting harus diikuti tautan langsung ke artikel pendukung. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika sumber artikel spesifik tidak ditemukan atau data tidak mendukung klaim, katakan terus terang bahwa belum dapat diverifikasi. Tampilkan nama media normal tanpa awalan kata image atau kode ikon.\n' + ctx;
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
       if (ctx.indexOf('[Pencarian web gagal]') < 0) { delete body.tools; delete body.toolConfig; }
