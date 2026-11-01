@@ -174,11 +174,11 @@
         var m = line.match(/^- \[([^\]]+)\] (.*?) \((https?:\/\/[^)]+)\):/);
         if (!m) return;
         var title = String(m[2] || '').trim(), url = String(m[3] || '').trim();
-        var imageMatch = line.match(/\\[THUMBNAIL:\\s*(https?:\\/\\/[^\\]\\s]+)\\]/i);
-        var imageUrl = imageMatch ? imageMatch[1] : '';
+        var imageAt = line.indexOf('[THUMBNAIL: ');
+        var imageUrl = imageAt >= 0 ? line.slice(imageAt + 12).split(']')[0].trim() : '';
         try {
           var u = new URL(url); u.hash = ''; u.search = '';
-          var key = u.href.replace(/\\/$/, '').toLowerCase();
+          var key = u.href.replace(/\/$/, '').toLowerCase();
           if (!seen[key] && title && /^https?:$/.test(u.protocol)) {
             seen[key] = true; found.push({ provider:m[1], title:title, url:url, image:imageUrl });
           }
