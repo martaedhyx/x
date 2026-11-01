@@ -493,7 +493,7 @@ input, textarea{font-size:17.6px!important}
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
       var sourcePath=''; try{sourcePath=new URL(rawUrl).pathname.toLowerCase();}catch(e){}
-      if(isNonArticleSourcePath(sourcePath)) return '<span>'+String(label).replace(/^(image|favicon)/i,'').trim()+' — halaman rangkuman/arsip, bukan artikel langsung</span>';
+      if(isNonArticleSourcePath(sourcePath)){var blockedLabel=String(label).replace(/^(image|favicon)\\s*/i,'').trim();if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(blockedLabel))blockedLabel=host;return '<span>'+blockedLabel+' — halaman rangkuman/arsip, bukan artikel langsung</span>';}
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
       label=String(label).replace(/^(image|favicon)\s*/i,'').trim() || host;
       if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(label)) label=host;
