@@ -79,35 +79,50 @@ function source(provider, item) {
   };
 }
 
-async function fetchOgImage(articleUrl) {
+async function fetchPageImages(articleUrl) {
   try {
     const response = await fetch(articleUrl, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; EdhyXBot/1.0)", Accept: "text/html,application/xhtml+xml" },
       signal: AbortSignal.timeout(7000),
       redirect: "error"
     });
-    if (!response.ok) return "";
+    if (!response.ok) return { image: "", favicon: "" };
     const html = (await response.text()).slice(0, 600000);
-    const tags = html.match(/<meta\b[^>]*>/gi) || [];
-    let raw = "";
+    const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+    let image = "";
     for (const tag of tags) {
-      const property = (tag.match(/\b(?:property|name)\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
+      const property = (tag.match(/\\b(?:property|name)\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
       if (!/^(og:image|og:image:url|twitter:image|twitter:image:src)$/i.test(property)) continue;
-      raw = (tag.match(/\bcontent\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
-      if (raw) break;
+      image = (tag.match(/\\bcontent\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      if (image) break;
     }
-    if (!raw) {
-      const link = html.match(/<link\b[^>]*rel=["'][^"']*image_src[^"']*["'][^>]*>/i);
-      if (link) raw = (link[0].match(/\bhref\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
+    if (!image) {
+      const imageLink = (html.match(/<link\\b[^>]*>/gi) || []).find(tag => /\\brel\\s*=\\s*["'][^"']*image_src[^"']*["']/i.test(tag));
+      if (imageLink) image = (imageLink.match(/\\bhref\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
     }
-    raw = raw.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
-    if (!raw || /^data:/i.test(raw)) return "";
-    return safeUrl(new URL(raw, response.url || articleUrl).toString());
+    image = image.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
+    image = image && !/^data:/i.test(image) ? safeUrl(new URL(image, response.url || articleUrl).toString()) : "";
+
+    const linkTags = html.match(/<link\\b[^>]*>/gi) || [];
+    const iconTag = linkTags.find(tag => {
+      const rel = (tag.match(/\\brel\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      return /(^|\\s)icon(\\s|$)/i.test(rel) && !/apple-touch-icon/i.test(rel);
+    }) || linkTags.find(tag => /apple-touch-icon/i.test(tag));
+    let favicon = iconTag ? ((iconTag.match(/\\bhref\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "") : "";
+    favicon = favicon.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
+    if (favicon && !/^data:/i.test(favicon)) favicon = safeUrl(new URL(favicon, response.url || articleUrl).toString());
+    if (!favicon) {
+      const host = new URL(articleUrl).hostname;
+      favicon = "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(host) + "&sz=64";
+    }
+    return { image, favicon };
   } catch {
-    return "";
+    try {
+      const host = new URL(articleUrl).hostname;
+      return { image: "", favicon: "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(host) + "&sz=64" };
+    } catch { return { image: "", favicon: "" }; }
   }
 }
-
 async function tavilySearch(query) {
   const key = process.env.TAVILY_API_KEY;
   if (!key) return [];
@@ -212,10 +227,14 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "Tidak ada hasil pencarian yang berhasil diperoleh.", configured, failedProviders: errors });
   }
   const selected = unique.slice(0, MAX_SOURCES);
-  const enriched = await Promise.all(selected.map(async item => ({
-    ...item,
-    image: item.image || await fetchOgImage(item.url)
-  })));
+  const enriched = await Promise.all(selected.map(async item => {
+    const meta = await fetchPageImages(item.url);
+    return {
+      ...item,
+      image: item.image || meta.image,
+      favicon: item.favicon || meta.favicon
+    };
+  }));
   return res.status(200).json({
     action,
     query,
