@@ -62,7 +62,7 @@
             var parts = path.split('/').filter(Boolean), last = parts[parts.length - 1] || '';
             if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
             if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru)$/i.test(last)) return false;
-            if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 100) return false;
+            if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 60) return false;
             u.hash = ''; u.search = '';
             var canonical = u.href.replace(/\/$/, '').toLowerCase();
             if (seenArticleUrls[canonical]) return false;
@@ -153,10 +153,10 @@
       if (!tp) return false;
       var ctx = await gather(tp.text);
       if (!ctx) return false;
-      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk daftar beberapa berita, setiap berita wajib didukung oleh artikel tersendiri yang isi dan judulnya langsung relevan dengan klaim tersebut. Gunakan URL artikel asli dari media, bukan halaman agregator/rangkuman harian/feed seperti /today, /hub/, /digest/, /roundup/ atau /briefing. Jangan memakai halaman tag, topik, kategori, arsip tanggal, hasil pencarian, atau beranda sebagai bukti. Satu berita = satu URL artikel spesifik; jangan memakai URL yang sama untuk dua berita berbeda. Jangan menulis tautan generik berlabel Baca selengkapnya; label tautan harus berupa judul artikel atau nama media yang benar. Jika artikel langsung yang berbeda tidak cukup, tampilkan lebih sedikit berita dan jelaskan kekurangannya—jangan memaksakan jumlah. Tanggal terbit harus berasal dari artikel, bukan tanggal pencarian atau tanggal arsip. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika klaim tidak didukung isi artikel, tandai belum terverifikasi atau hilangkan. Tampilkan nama media normal tanpa awalan kata image/favicon dan tanpa kode ikon.\n' + ctx;
+      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk daftar beberapa berita, setiap berita wajib didukung oleh artikel tersendiri yang isi dan judulnya langsung relevan dengan klaim tersebut. Gunakan URL artikel asli dari media, bukan halaman agregator/rangkuman harian/feed seperti /today, /hub/, /digest/, /roundup/ atau /briefing. Jangan memakai halaman tag, topik, kategori, arsip tanggal, hasil pencarian, atau beranda sebagai bukti. Satu berita = satu URL artikel spesifik; jangan memakai URL yang sama untuk dua berita berbeda. Jangan menulis tautan generik berlabel Baca selengkapnya; label tautan harus berupa judul artikel atau nama media yang benar. Jika artikel langsung yang berbeda tidak cukup, tampilkan lebih sedikit berita dan jelaskan kekurangannya—jangan memaksakan jumlah. Tanggal terbit harus berasal dari artikel, bukan tanggal pencarian atau tanggal arsip. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika klaim tidak didukung isi artikel, tandai belum terverifikasi atau hilangkan. Setiap sumber yang benar-benar dipakai wajib ditautkan langsung pada klaimnya dengan format Markdown [judul artikel](URL artikel asli). Jangan mengganti URL artikel dengan halaman topik/kategori. Bila hasil pencarian backend kosong atau tidak cukup, gunakan Google Search yang tersedia untuk mencari artikel primer tambahan; bila tetap tidak ditemukan, nyatakan sumber belum ditemukan dan jangan mengarang. Tampilkan nama media normal tanpa awalan kata image/favicon dan tanpa kode ikon.\n' + ctx;
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
-      if (ctx.indexOf('[Pencarian web gagal]') < 0) { delete body.tools; delete body.toolConfig; }
+      // Pertahankan Google Search/URL Context sebagai jalur tambahan jika backend tidak menemukan artikel langsung.
       return true;
     } catch (e) { return false; }
   }
