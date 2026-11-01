@@ -80,7 +80,7 @@
           ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800) +
           (r.image ? ' [THUMBNAIL: ' + r.image + ']' : '') +
           (r.favicon ? ' [SITE_ICON: ' + r.favicon + ']' : '');
-      }).join('\\n');
+      }).join('\n');
     });
   }
   function wiki(q, lang) {
@@ -197,7 +197,7 @@
         return (x.favicon ? '![logo situs](' + x.favicon + ') ' : '') +
           '[' + x.title.replace(/\\[/g, '(').replace(/\\]/g, ')') + '](' + x.url + ') — ' + x.provider +
           (x.image ? ' ![thumbnail artikel](' + x.image + ')' : '');
-      }).join('\\n');
+      }).join('\n');
       target.text += '\n\n### Sumber web yang ditemukan dan diperiksa\n' + list;
       var headers = new Headers(res.headers);
       headers.delete('content-length'); headers.delete('content-encoding');
