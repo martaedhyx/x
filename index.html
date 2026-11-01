@@ -472,7 +472,7 @@ input, textarea{font-size:17.6px!important}
   function inline(s){
     // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
     // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
-    s = s.replace(/\\(?=&lt;img\b)/g,'')
+    s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=&lt;img\b)/g,'')
       .replace(/\(\s*\[image\]\(https?:\/\/www\.google\.com\/s2\/favicons[^)]*\)\s*\)/gi,'')
       .replace(/\[image([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)');
     return s.replace(/&lt;img\b[\s\S]*?\bsrc=(?:"([^"]*)"|'([^']*)')[\s\S]*?\/?&gt;/gi,function(_,quoted,single){
