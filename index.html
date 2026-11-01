@@ -122,8 +122,15 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 #micBtn.on{background:var(--accent);color:var(--accent-ink)}
 .lens button[data-p]{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-top:8px}
 .lens button[data-p]:hover{background:var(--hover)}
-.src{font-size:14.3px;color:var(--muted);margin-top:4px}
-.src a{color:inherit;margin-right:12px;text-decoration:underline;overflow-wrap:anywhere}
+.src{font-size:14.3px;color:var(--muted);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.src-heading{width:100%;font-size:12px;color:var(--muted);font-weight:650}
+.src .src-card{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;text-decoration:none}
+.src .src-thumb{width:26px;height:26px;flex:0 0 26px;object-fit:contain;border-radius:6px}
+.src .src-meta{display:flex;flex-direction:column;min-width:0}
+.src .src-meta strong{font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
+.src .src-meta small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.msg.bot .md-image-thumb{display:block;max-width:min(100%,560px);max-height:360px;object-fit:contain;border:1px solid var(--line);border-radius:12px;margin:10px 0}
+.msg.bot .md-image-link{display:inline-block;max-width:100%}
 .note{max-width:720px;margin:6px auto 0;text-align:center;color:var(--muted);font-size:12.1px!important}
 
 textarea::placeholder,input::placeholder{color:var(--muted);opacity:1}
@@ -460,7 +467,11 @@ input, textarea{font-size:17.6px!important}
 
   /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */
   function inline(s){
-    return s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,function(_,label,url){
+    return s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,function(_,alt,url){
+      var safeUrl=url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      var safeAlt=alt.replace(/"/g,'&quot;');
+      return '<a class="md-image-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer"><img class="md-image-thumb" src="'+safeUrl+'" alt="'+safeAlt+'" loading="lazy" decoding="async"></a>';
+    }).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,function(_,label,url){
       // url di sini sudah ter-escape oleh esc(), decode dulu untuk parsing hostname
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
@@ -492,7 +503,10 @@ input, textarea{font-size:17.6px!important}
       else if((m=line.match(/^\s*[-*]\s+(.*)/))){if(mode!=='ul'){close();out+='<ul>';mode='ul';}out+='<li>'+inline(m[1])+'</li>';}
       else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){if(mode!=='ol'){close();out+='<ol>';mode='ol';}out+='<li>'+inline(m[1])+'</li>';}
       else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
-      else if(!line.trim()){close();}
+      else if(!line.trim()){
+        var nextLine=lines[i+1]||'';
+        if(!(mode==='ol' && /^\\s*\\d+[.)]\\s+/.test(nextLine))) close();
+      }
       else{close();out+='<p>'+inline(line)+'</p>';}
     });close();return out;
   }
@@ -567,8 +581,19 @@ input, textarea{font-size:17.6px!important}
       }
     });
     if (m.src && m.src.length){
-      var sd = el('div','src','Sumber: ');
-      m.src.forEach(function(z){ var a2 = el('a','',z.title); a2.href = z.uri; a2.target = '_blank'; a2.rel = 'noopener noreferrer'; sd.appendChild(a2); });
+      var sd = el('div','src'); sd.appendChild(el('span','src-heading','Sumber'));
+      m.src.forEach(function(z){
+        var a2=el('a','src-card'),host='';
+        a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
+        try{host=new URL(z.uri).hostname.replace(/^www\\./,'');}catch(e){}
+        if(host){
+          var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
+          ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
+        }
+        var meta=el('span','src-meta'); meta.appendChild(el('strong','',z.title||host||'Situs sumber'));
+        if(host)meta.appendChild(el('small','',host));
+        a2.appendChild(meta); sd.appendChild(a2);
+      });
       d.appendChild(sd);
     }
     if (all){
