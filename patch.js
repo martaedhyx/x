@@ -28,9 +28,14 @@
 
   /* ---------- sumber data ---------- */
   function jget(url, opt) {
-    var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 7000);
+    var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 16000);
     opt = Object.assign({ signal: c.signal }, opt || {});
-    return orig(url, opt).then(function (r) { clearTimeout(t); if (!r.ok) throw new Error(r.status); return r.json(); });
+    return orig(url, opt).then(async function (r) {
+      clearTimeout(t);
+      var data = await r.json().catch(function () { return {}; });
+      if (!r.ok) throw new Error((data && data.error) || ('HTTP ' + r.status));
+      return data;
+    }).catch(function (e) { clearTimeout(t); throw e; });
   }
   /* Pencarian web melalui backend Vercel; API key provider tetap di server. */
   var RESEARCH_API = 'https://edhy-robot.vercel.app/api/research';
