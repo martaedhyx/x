@@ -489,6 +489,7 @@ input, textarea{font-size:17.6px!important}
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
+      label=String(label).replace(/^(image|favicon)\\s*/i,'').trim() || host;
       // escape " dan ' agar tidak bisa break-out dari atribut href
       var safeUrl = url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       return '<a class="md-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
@@ -607,7 +608,8 @@ input, textarea{font-size:17.6px!important}
           var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
           ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
         }
-        var meta=el('span','src-meta'); meta.appendChild(el('strong','',z.title||host||'Situs sumber'));
+        var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\\s*/i,'').trim() || host || 'Situs sumber';
+        var meta=el('span','src-meta'); meta.appendChild(el('strong','',sourceTitle));
         if(host)meta.appendChild(el('small','',host));
         a2.appendChild(meta); sd.appendChild(a2);
       });
