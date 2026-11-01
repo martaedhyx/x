@@ -50,9 +50,9 @@
       if ((action || 'search') === 'search') {
         rows = rows.filter(function (r) {
           try {
-            var u = new URL(r.url), path = u.pathname.toLowerCase().replace(/\\/+$/, '');
+            var u = new URL(r.url), path = u.pathname.toLowerCase(); while (path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
             if (!/^https?:$/.test(u.protocol) || !u.hostname) return false;
-            if (!path || path === '/' || /\\/(tag|tags|topic|topics|category|categories|search|cari|author|authors)(\\/|$)/i.test(path)) return false;
+            if (!path || path === '/' || new RegExp('(^|/)(tag|tags|topic|topics|category|categories|search|cari|author|authors)(/|$)','i').test(path)) return false;
             if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 100) return false;
             return true;
           } catch (e) { return false; }
