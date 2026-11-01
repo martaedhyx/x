@@ -775,8 +775,11 @@ input, textarea{font-size:17.6px!important}
      dan aborted-check diganti 'return' bersih (tidak melempar error di luar try). */
   async function send(){
     var q = text.value.trim();
-    // Perintah lokal dijalankan sebelum pemeriksaan API/key agar tidak dijawab oleh model AI.
-    if (/^(edhy[, ]*)?(buka|tampilkan|jalankan) (komputer|edhyx computer)[.! ]*$/i.test(q)) {
+    // Perintah panel lokal dikenali sebelum API/Gemini/Groq dipanggil.
+    var localCommand = q.toLocaleLowerCase('id-ID').trim().replace(/\s+/g,' ').replace(/[.!?]+$/,'');
+    var openComputer = /^(?:(?:edhy)[, ]+)?(?:tolong\s+)?(?:buka|tampilkan|jalankan)\s+(?:(?:panel|dasbor)\s+)?(?:edhyx\s+)?(?:computer|komputer|monitoring(?:\s+sistem)?|kontrol\s+sistem)(?:\s+sekarang)?$/i.test(localCommand);
+    var openTerminal = /^(?:(?:edhy)[, ]+)?(?:tolong\s+)?(?:buka|akses|jalankan|masuk ke)\s+terminal$/i.test(localCommand);
+    if (openComputer) {
       text.value = ''; text.style.height = 'auto';
       if (window.EdhyTerminal && typeof window.EdhyTerminal.openMonitoring === 'function') {
         window.EdhyTerminal.openMonitoring();
@@ -785,7 +788,7 @@ input, textarea{font-size:17.6px!important}
       }
       return;
     }
-    if (/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i.test(q)) {
+    if (openTerminal) {
       text.value = ''; text.style.height = 'auto';
       if (window.EdhyTerminal && typeof window.EdhyTerminal.open === 'function') window.EdhyTerminal.open();
       else addErr('Terminal belum termuat. Muat ulang halaman lalu coba lagi.');
@@ -1008,6 +1011,6 @@ input, textarea{font-size:17.6px!important}
 <script src="./patch.js?v=4"></script>
 <script src="./groq.js?v=3"></script>
 <script src="./visual-engine.js?v=3"></script>
-<script src="./terminal-ui.js?v=4"></script>
+<script src="./terminal-ui.js?v=5"></script>
 </body>
 </html>
