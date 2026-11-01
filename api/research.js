@@ -2,6 +2,7 @@ const ORIGIN = "https://martaedhyx.github.io";
 const MAX_QUERY = 500;
 const MAX_URL = 2048;
 const TIMEOUT_MS = 12000;
+const MAX_SOURCES = 15;
 
 export const config = { maxDuration: 30 };
 
@@ -36,6 +37,30 @@ async function request(url, options = {}) {
   return data;
 }
 
+function isDirectArticle(item) {
+  const url = safeUrl(item && item.url);
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    let path = u.pathname.toLowerCase().replace(/\\/+$/, "") || "/";
+    if (path === "/") return false;
+    const blocked = /(^|\\/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives|hub|today|daily|digest|roundup|briefing|feed|feeds|page|pages)(\\/|$)/i;
+    if (blocked.test(path)) return false;
+    const parts = path.split("/").filter(Boolean);
+    const last = parts[parts.length - 1] || "";
+    if (/^(19|20)\\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\\d|3[01]))?$/.test(last)) return false;
+    if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru|home|index)$/i.test(last)) return false;
+    const title = clean(item.title || item.name, 300);
+    const content = clean(item.content || item.description || item.snippet || item.text ||
+      (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800);
+    if (title.length < 9 || content.replace(/\\s+/g, " ").trim().length < 60) return false;
+    if (/^(home|homepage|beranda|latest news|ai news|berita terbaru|search results?)$/i.test(title)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function source(provider, item) {
   const url = clean(item.url || item.link, MAX_URL);
   if (!/^https?:\/\//i.test(url)) return null;
@@ -54,7 +79,7 @@ async function tavilySearch(query) {
   const data = await request("https://api.tavily.com/search", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-    body: JSON.stringify({ query, search_depth: "basic", max_results: 5, include_answer: false })
+    body: JSON.stringify({ query, search_depth: "basic", max_results: 8, include_answer: false })
   });
   return (data.results || []).map(x => source("Tavily", x)).filter(Boolean);
 }
@@ -62,7 +87,7 @@ async function tavilySearch(query) {
 async function braveSearch(query) {
   const key = process.env.BRAVE_API_KEY;
   if (!key) return [];
-  const url = "https://api.search.brave.com/res/v1/web/search?q=" + encodeURIComponent(query) + "&count=5";
+  const url = "https://api.search.brave.com/res/v1/web/search?q=" + encodeURIComponent(query) + "&count=8";
   const data = await request(url, { headers: { "X-Subscription-Token": key } });
   return (((data.web || {}).results) || []).map(x => source("Brave", x)).filter(Boolean);
 }
@@ -73,7 +98,7 @@ async function exaSearch(query) {
   const data = await request("https://api.exa.ai/search", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": key },
-    body: JSON.stringify({ query, type: "auto", numResults: 5, contents: { text: { maxCharacters: 1400 } } })
+    body: JSON.stringify({ query, type: "auto", numResults: 8, contents: { text: { maxCharacters: 1400 } } })
   });
   return (data.results || []).map(x => source("Exa", x)).filter(Boolean);
 }
@@ -142,7 +167,7 @@ export default async function handler(req, res) {
   const unique = [];
   const seen = new Set();
   for (const item of sources) {
-    const key = item.url.toLowerCase();
+    if (!isDirectArticle(item)) continue;\n    const parsed = new URL(item.url); parsed.hash = ""; parsed.search = "";\n    const key = parsed.toString().replace(/\\/$/, "").toLowerCase();
     if (!seen.has(key)) { seen.add(key); unique.push(item); }
   }
   if (!unique.length) {
@@ -151,7 +176,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     action,
     query,
-    sources: unique.slice(0, 12),
+    sources: unique.slice(0, MAX_SOURCES),
     configured,
     failedProviders: errors
   });
