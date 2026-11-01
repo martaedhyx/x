@@ -84,7 +84,7 @@ async function fetchOgImage(articleUrl) {
     const response = await fetch(articleUrl, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; EdhyXBot/1.0)", Accept: "text/html,application/xhtml+xml" },
       signal: AbortSignal.timeout(7000),
-      redirect: "follow"
+      redirect: "error"
     });
     if (!response.ok) return "";
     const html = (await response.text()).slice(0, 600000);
