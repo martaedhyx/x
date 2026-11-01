@@ -922,7 +922,21 @@ input, textarea{font-size:17.6px!important}
   text.addEventListener('input', function(){ Eyes.pulse('write', 1400); text.style.height = 'auto'; text.style.height = Math.min(text.scrollHeight, 160) + 'px'; });
   $('menuBtn').addEventListener('click', function(){ document.body.classList.add('open'); });
   $('scrim').addEventListener('click', closeMenu);
-  $('newBtn').addEventListener('click', function(){ cur = null; persist(); render(); closeMenu(); text.focus(); });
+  $('newBtn').addEventListener('click', function(){
+  cur = null;
+  text.value = '';
+  text.style.height = 'auto';
+  pending = [];
+  imageMode = false;
+  searchOn = false;
+  locOn = false;
+  loc = null;
+  renderChips();
+  persist();
+  render();
+  closeMenu();
+  text.focus();
+});
   $('clearHistoryBtn').addEventListener('click', function(){
     if (!chats.length){ alert('Riwayat chat masih kosong.'); return; }
     if (!confirm('Hapus semua riwayat chat? Tindakan ini tidak bisa dibatalkan.')) return;
