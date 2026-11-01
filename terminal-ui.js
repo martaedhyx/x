@@ -171,7 +171,7 @@ style.textContent = `
     card.id='edhySystemMonitor';card.className='edhy-monitor';
     card.innerHTML=`
       <div class="edhy-monitor-head">
-        <strong class="edhy-monitor-title">EDHY SYSTEM MONITORING</strong>
+        <strong class="edhy-monitor-title">EdhyX Computer</strong>
         <svg class="edhy-monitor-win" viewBox="0 0 24 24" aria-label="Windows"><path d="M2 5.2 10.7 4v7.9H2zm9.7-1.4L22 2.4v9.5H11.7zM2 12.9h8.7v7.9L2 19.6zm9.7 0H22v9.5l-10.3-1.4z"/></svg>
       </div>
       <div class="edhy-monitor-output" role="log" aria-live="polite"></div>
