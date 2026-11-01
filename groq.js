@@ -5,7 +5,7 @@
   function sv(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
   /* patch.js dimuat lebih dahulu; simpan wrapper-nya agar konteks waktu dan pencarian Gemini tetap berjalan. */
   var patchedFetch = window.fetch.bind(window);
-  var WEB = /\\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\\b/i;
+  var WEB = /\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\b/i;
   var qkey = function(){ return ld('groq_key', ''); };
   var qmodel = function(){ return ld('groq_model', 'openai/gpt-oss-120b'); };
   var mode = function(){ return ld('groq_mode', 'auto'); };
@@ -52,10 +52,10 @@
     if(!q) return false;
     var low=q.toLowerCase();
     /* Jangan lewatkan tugas yang membutuhkan pencarian, pembacaan URL, multimodal, atau engine visual Edhy. */
-    var needsGemini=/https?:\/\/|\\b(terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|berita|news|harga|kurs|cuaca|gempa|skor|jadwal|cari|telusuri|search|riset|penelitian|jurnal|referensi|sumber|sitasi|bandingkan|analisis mendalam|analisis kompleks|langkah demi langkah|buktikan|apa itu|siapa|sejarah|pengertian|definisi|kapan|di mana|dimana|berapa|kode|coding|program|debug|javascript|python|sql|api|error|bug|tabel|grafik|diagram|mermaid|excel|pdf|word|dokumen|gambar|lampiran|file|visual|reasoning|deep research|think carefully)\\b/i.test(low);
+    var needsGemini=/https?:\/\/|\b(terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|berita|news|harga|kurs|cuaca|gempa|skor|jadwal|cari|telusuri|search|riset|penelitian|jurnal|referensi|sumber|sitasi|bandingkan|analisis mendalam|analisis kompleks|langkah demi langkah|buktikan|apa itu|siapa|sejarah|pengertian|definisi|kapan|di mana|dimana|berapa|kode|coding|program|debug|javascript|python|sql|api|error|bug|tabel|grafik|diagram|mermaid|excel|pdf|word|dokumen|gambar|lampiran|file|visual|reasoning|deep research|think carefully)\b/i.test(low);
     if(needsGemini || q.length>1800) return false;
     /* Permintaan menulis ringan, terjemahan, ringkasan, dan percakapan cepat cocok untuk Groq. */
-    var quick=/\\b(tulis|buat caption|caption|terjemahkan|translate|terjemah|rapikan teks|perbaiki kalimat|parafrase|paraphrase|ringkas|rangkum|summarize|rewrite|draft|balas pesan|ucapan|ide sederhana|sapaan)\\b/i.test(low);
+    var quick=/\b(tulis|buat caption|caption|terjemahkan|translate|terjemah|rapikan teks|perbaiki kalimat|parafrase|paraphrase|ringkas|rangkum|summarize|rewrite|draft|balas pesan|ucapan|ide sederhana|sapaan)\b/i.test(low);
     if(quick && q.length<=1800) return true;
     /* Untuk pertanyaan pendek sehari-hari, prioritaskan respons cepat Groq. */
     return q.length<=220 && !/[{}<>]/.test(q);
