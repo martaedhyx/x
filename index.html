@@ -143,6 +143,8 @@ dialog input,dialog textarea{width:100%;background:var(--bg);color:var(--ink);bo
 }
 @media (prefers-reduced-motion: reduce){ #side{transition:none} }
 
+.msg.bot .marta-name{color:#ff3030!important;font-weight:700!important}
+
 /* Tipografi ringkas dan seragam */
 *, *::before, *::after{font-family:var(--sans)!important;font-size:15.4px!important}
 /* Ukuran teks percakapan disamakan dengan ukuran baca ChatGPT */
@@ -449,7 +451,8 @@ input, textarea{font-size:17.6px!important}
       var safeUrl = url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       return '<a class="md-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
     }).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>')
-      .replace(/\[\[color=(#[0-9a-fA-F]{6})\]\]([\s\S]*?)\[\[\/color\]\]/g,'<span style="color:$1">$2</span>');
+      .replace(/\[\[color=(#[0-9a-fA-F]{6})\]\]([\s\S]*?)\[\[\/color\]\]/g,'<span style="color:$1">$2</span>')
+      .replace(/Marta Edi Sutrisno/gi,'<span class="marta-name">Marta Edi Sutrisno</span>');
   }
   function blocks(t){
     var out='',mode='',lines=t.split('\n');
