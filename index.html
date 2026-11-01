@@ -470,6 +470,11 @@ input, textarea{font-size:17.6px!important}
 
   /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */
   function inline(s){
+    // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
+    // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
+    s = s.replace(/\\(?=&lt;img\b)/g,'')
+      .replace(/\(\s*\[image\]\(https?:\/\/www\.google\.com\/s2\/favicons[^)]*\)\s*\)/gi,'')
+      .replace(/\[image([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)');
     return s.replace(/&lt;img\b[\s\S]*?\bsrc=(?:"([^"]*)"|'([^']*)')[\s\S]*?\/?&gt;/gi,function(_,quoted,single){
       var raw=(quoted||single||'').replace(/^\[(https?:\/\/[^\]]+)\]\((https?:\/\/[^)]+)\)$/i,'$2').replace(/&amp;/g,'&');
       if(!/^https?:\/\//i.test(raw))return '';
