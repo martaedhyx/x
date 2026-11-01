@@ -165,13 +165,13 @@
     if (!ctx || !res || !res.ok) return res;
     try {
       var found = [], seen = Object.create(null);
-      ctx.split('\\n').forEach(function (line) {
-        var m = line.match(/^- \\[([^\\]]+)\\] (.*?) \\((https?:\\/\\/[^)]+)\\):/);
+      ctx.split('\n').forEach(function (line) {
+        var m = line.match(/^- \[([^\]]+)\] (.*?) \((https?:\/\/[^)]+)\):/);
         if (!m) return;
         var title = String(m[2] || '').trim(), url = String(m[3] || '').trim();
         try {
           var u = new URL(url); u.hash = ''; u.search = '';
-          var key = u.href.replace(/\\/$/, '').toLowerCase();
+          var key = u.href.replace(/\/$/, '').toLowerCase();
           if (!seen[key] && title && /^https?:$/.test(u.protocol)) {
             seen[key] = true; found.push({ provider:m[1], title:title, url:url });
           }
@@ -184,9 +184,9 @@
       var target = parts.find(function (p) { return typeof p.text === 'string' && !p.thought; });
       if (!target) return res;
       var list = found.map(function (x) {
-        return '- [' + x.title.replace(/\\[/g, '\\\\[').replace(/\\]/g, '\\\\]') + '](' + x.url + ') — ' + x.provider;
-      }).join('\\n');
-      target.text += '\\n\\n### Sumber web yang ditemukan dan diperiksa\\n' + list;
+        return '- [' + x.title.replace(/\[/g, '(').replace(/\]/g, ')') + '](' + x.url + ') — ' + x.provider;
+      }).join('\n');
+      target.text += '\n\n### Sumber web yang ditemukan dan diperiksa\n' + list;
       var headers = new Headers(res.headers);
       headers.delete('content-length'); headers.delete('content-encoding');
       headers.set('content-type', 'application/json; charset=utf-8');
