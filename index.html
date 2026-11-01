@@ -128,6 +128,9 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 .src{font-size:14.3px;color:var(--muted);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
 .src-heading{width:100%;font-size:12px;color:var(--muted);font-weight:650}
 .src .src-card{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;text-decoration:none}
+.list-source{margin:6px 0 2px;padding:6px 9px;border-left:2px solid var(--line);font-size:.88em;color:var(--muted)}
+.list-source .md-link{display:inline-flex;align-items:center;gap:6px;overflow-wrap:anywhere}
+.list-source .site-icon{width:16px;height:16px;object-fit:contain;vertical-align:middle}
 .src .src-thumb{width:26px;height:26px;flex:0 0 26px;object-fit:contain;border-radius:6px}
 .src .src-meta{display:flex;flex-direction:column;min-width:0}
 .src .src-meta strong{font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
@@ -470,6 +473,12 @@ input, textarea{font-size:17.6px!important}
 
   /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */
   function inline(s){
+    // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
+    // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
+    s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=\[(?:image|favicon)\b)/gi,'').replace(/\\?&lt;img\b[\s\S]*?\/?&gt;/gi,'')
+      .replace(/\(\s*\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)\s*\)/gi,'')
+      .replace(/\[(?:image|favicon)\s*([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)')
+      .replace(/\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)/gi,'');
     return s.replace(/&lt;img\b[\s\S]*?\bsrc=(?:"([^"]*)"|'([^']*)')[\s\S]*?\/?&gt;/gi,function(_,quoted,single){
       var raw=(quoted||single||'').replace(/^\[(https?:\/\/[^\]]+)\]\((https?:\/\/[^)]+)\)$/i,'$2').replace(/&amp;/g,'&');
       if(!/^https?:\/\//i.test(raw))return '';
@@ -483,7 +492,11 @@ input, textarea{font-size:17.6px!important}
       // url di sini sudah ter-escape oleh esc(), decode dulu untuk parsing hostname
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
+      var sourcePath=''; try{sourcePath=new URL(rawUrl).pathname.toLowerCase();}catch(e){}
+      if(isNonArticleSourcePath(sourcePath)){var blockedLabel=String(label).replace(/^(image|favicon)\\s*/i,'').trim();if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(blockedLabel))blockedLabel=host;return '<span>'+blockedLabel+' — halaman rangkuman/arsip, bukan artikel langsung</span>';}
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
+      label=String(label).replace(/^(image|favicon)\s*/i,'').trim() || host;
+      if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(label)) label=host;
       // escape " dan ' agar tidak bisa break-out dari atribut href
       var safeUrl = url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       return '<a class="md-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
@@ -492,11 +505,24 @@ input, textarea{font-size:17.6px!important}
       .replace(/\[\[color=(#[0-9a-fA-F]{6})\]\]([\s\S]*?)\[\[\/color\]\]/g,'<span style="color:$1">$2</span>')
       .replace(/Marta Edi Sutrisno/gi,'<span class="marta-name">Marta Edi Sutrisno</span>');
   }
+  function isNonArticleSourcePath(path){
+    path=String(path||'').toLowerCase();
+    while(path.length>1&&path.charAt(path.length-1)==='/')path=path.slice(0,-1);
+    if(!path||path==='/')return true;
+    if(/(^|\/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives|hub|today|daily|digest|roundup|briefing)(\/|$)/i.test(path))return true;
+    if(/\/(?:19|20)\d{2}(?:[-/]\d{1,2}){0,2}$/i.test(path))return true;
+    var parts=path.split('/').filter(Boolean);
+    return parts.length===1&&/^(berita|news|ai|technology|teknologi|artikel|latest|terbaru)$/i.test(parts[0]);
+  }
   function blocks(t){
-    var out='',mode='',lines=t.split('\n');
-    function close(){if(mode){out+='</'+mode+'>';mode='';}}
+    var out='',mode='',liOpen=false,lines=t.split('\n');
+    function close(){
+      if(mode==='ol'&&liOpen){out+='</li>';liOpen=false;}
+      if(mode){out+='</'+mode+'>';mode='';}
+    }
     function cells(line){return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(v){return v.trim();});}
     function isSep(line){return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());}
+    function isSourceLine(line){var x=line.trim().replace(/^\\+/,'').replace(/^[-*]\s+/,'');return /^\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x)||/(?:<img\b|&lt;img\b)[\s\S]*?(?:https?:\/\/|favicons)/i.test(x)||/\[(?:image|favicon)[^\]]*\]\(https?:\/\//i.test(x);}
     lines.forEach(function(line,i){
       var m;
       if(line.indexOf('|')!==-1 && i+1<lines.length && isSep(lines[i+1])){
@@ -511,15 +537,23 @@ input, textarea{font-size:17.6px!important}
         close();var j=i+1;
         while(j<lines.length&&lines[j].trim()&&lines[j].indexOf('|')!==-1)j++;
         i=j-1;
-      }else if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';}
-      else if((m=line.match(/^\s*[-*]\s+(.*)/))){if(mode!=='ul'){close();out+='<ul>';mode='ul';}out+='<li>'+inline(m[1])+'</li>';}
-      else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){if(mode!=='ol'){close();out+='<ol>';mode='ol';}out+='<li>'+inline(m[1])+'</li>';}
-      else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
-      else if(!line.trim()){
-        var nextLine=lines[i+1]||'';
-        if(!(mode==='ol' && /^\s*\d+[.)]\s+/.test(nextLine))) close();
-      }
-      else{close();out+='<p>'+inline(line)+'</p>';}
+      }else if(mode==='ol'&&liOpen&&isSourceLine(line)){
+        out+='<div class="list-source">'+inline(line.trim().replace(/^[-*]\s+/,''))+'</div>';
+      }else if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){
+        close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';
+      }else if((m=line.match(/^\s*[-*]\s+(.*)/))){
+        close();out+='<ul><li>'+inline(m[1])+'</li></ul>';
+      }else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){
+        if(mode!=='ol'){close();out+='<ol>';mode='ol';}
+        if(liOpen)out+='</li>';
+        out+='<li>'+inline(m[1]);liOpen=true;
+      }else if((m=line.match(/^#{1,4}\s+(.*)/))){
+        close();out+='<h3>'+inline(m[1])+'</h3>';
+      }else if(!line.trim()){
+        var nextIndex=i+1;while(nextIndex<lines.length&&!lines[nextIndex].trim())nextIndex++;
+        var nextLine=lines[nextIndex]||'';
+        if(!(mode==='ol'&&(/^\s*\d+[.)]\s+/.test(nextLine)||isSourceLine(nextLine))))close();
+      }else{close();out+='<p>'+inline(line)+'</p>';}
     });close();return out;
   }
   function md(src){
@@ -594,15 +628,22 @@ input, textarea{font-size:17.6px!important}
     });
     if (m.src && m.src.length){
       var sd = el('div','src'); sd.appendChild(el('span','src-heading','Sumber'));
+      var seenSourceUris=Object.create(null);
       m.src.forEach(function(z){
-        var a2=el('a','src-card'),host='';
+        var a2=el('a','src-card'),host='',canonical='';
+        try{
+          var su=new URL(z.uri); if(!/^https?:$/.test(su.protocol)||isNonArticleSourcePath(su.pathname))return;
+          su.hash=''; su.search=''; canonical=su.href.replace(/\/$/,'').toLowerCase();
+        }catch(e){return;}
+        if(seenSourceUris[canonical])return; seenSourceUris[canonical]=true;
         a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
-        try{host=new URL(z.uri).hostname.replace(/^www\./,'');}catch(e){}
+        host=(new URL(z.uri)).hostname.replace(/^www\./,'');
         if(host){
           var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
           ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
         }
-        var meta=el('span','src-meta'); meta.appendChild(el('strong','',z.title||host||'Situs sumber'));
+        var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\s*/i,'').trim() || host || 'Situs sumber';
+        var meta=el('span','src-meta'); meta.appendChild(el('strong','',sourceTitle));
         if(host)meta.appendChild(el('small','',host));
         a2.appendChild(meta); sd.appendChild(a2);
       });
@@ -1096,7 +1137,7 @@ input, textarea{font-size:17.6px!important}
 })();
 </script>
 <script src="./patch.js?v=4"></script>
-<script src="./groq.js?v=3"></script>
+<script src="./groq.js?v=4"></script>
 <script src="./visual-engine.js?v=3"></script>
 <script src="./terminal-ui.js?v=8"></script>
   <script src="./baca-link.js"></script>
