@@ -32,16 +32,18 @@
     opt = Object.assign({ signal: c.signal }, opt || {});
     return orig(url, opt).then(function (r) { clearTimeout(t); if (!r.ok) throw new Error(r.status); return r.json(); });
   }
-  function tavily(q) {
-    var key = ls('tavily_key'); if (!key) return Promise.resolve('');
-    return jget('https://api.tavily.com/search', {
+  /* Pencarian web melalui backend Vercel; API key provider tetap di server. */
+  var RESEARCH_API = 'https://edhy-robot.vercel.app/api/research';
+  function research(q, action, pageUrl) {
+    return jget(RESEARCH_API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-      body: JSON.stringify({ query: q, max_results: 5, search_depth: 'basic' })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action || 'search', query: q, url: pageUrl || '' })
     }).then(function (d) {
-      return (d.results || []).map(function (r) {
-        return '- ' + r.title + ' (' + r.url + '): ' + String(r.content || '').slice(0, 450);
-      }).join('\n');
+      return (d.sources || []).map(function (r) {
+        return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Sumber') +
+          ' (' + r.url + '): ' + String(r.content || '').slice(0, 1400);
+      }).join('\\n');
     });
   }
   function wiki(q, lang) {
@@ -85,24 +87,33 @@
 
   async function gather(q) {
     var s = q.toLowerCase(), jobs = [];
-    var web = /\b(sekarang|terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|tahun ini|update|berita|harga|tarif|kurs|jadwal|skor|rilis|versi|bandingkan|telusuri|cari)\b/.test(s) || /https?:\/\//.test(s);
-    var fact = /\b(siapa|apa itu|apa yang|sejarah|jelaskan|pengertian|definisi|kapan|di mana|dimana|berapa|ibu kota|biografi)\b/.test(s);
-    var sci = /\b(jurnal|penelitian|riset|studi|paper|ilmiah|skripsi|referensi)\b/.test(s);
-    var wx = /\b(cuaca|suhu|prakiraan|hujan)\b/.test(s), eq = /\b(gempa)\b/.test(s);
-    var clean = q.replace(/\b(tolong|dong|sih|ya|apa itu|siapa|jelaskan|apa kabar)\b/gi, '').replace(/[?!]/g, '').trim() || q;
-    if (web || fact) jobs.push(safe(tavily(q), 'Web & berita (Tavily)'));
+    var pageMatch = q.match(/https?:\\/\\/[^\\s<>"']+/i);
+    var pageUrl = pageMatch ? pageMatch[0].replace(/[),.;!?]+$/, '') : '';
+    var web = /\\b(sekarang|terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|tahun ini|update|berita|harga|tarif|kurs|jadwal|skor|rilis|versi|bandingkan|telusuri|cari|search|latest|news|today)\\b/.test(s) || !!pageUrl;
+    var fact = /\\b(siapa|apa itu|apa yang|sejarah|jelaskan|pengertian|definisi|kapan|di mana|dimana|berapa|ibu kota|biografi)\\b/.test(s);
+    var sci = /\\b(jurnal|penelitian|riset|studi|paper|ilmiah|skripsi|referensi)\\b/.test(s);
+    var wx = /\\b(cuaca|suhu|prakiraan|hujan)\\b/.test(s), eq = /\\b(gempa)\\b/.test(s);
+    var clean = q.replace(/\\b(tolong|dong|sih|ya|apa itu|siapa|jelaskan|apa kabar)\\b/gi, '').replace(/[?!]/g, '').trim() || q;
+    if (pageUrl) {
+      jobs.push(safe(research(q, 'read', pageUrl), 'Isi halaman web (Vercel)'));
+    } else if (web || fact) {
+      jobs.push(research(q, 'search').then(function (t) {
+        return t ? '[Web & berita (backend Vercel)]\\n' + t : '';
+      }).catch(function (e) {
+        return '[Pencarian web gagal] Backend Vercel: ' + String(e.message || e) + '. Jangan mengarang hasil atau sumber; jika Google Search tersedia, gunakan alat tersebut.';
+      }));
+    }
     if (fact || sci) { jobs.push(safe(wiki(clean, 'id'), 'Wikipedia ID')); jobs.push(safe(wiki(clean, 'en'), 'Wikipedia EN')); }
     if (sci) jobs.push(safe(openalex(clean), 'Jurnal (OpenAlex)'));
     if (wx) {
-      var m = q.match(/(?:cuaca|suhu|prakiraan|hujan)\s+(?:di\s+|kota\s+)?([a-zA-Z ]{3,30}?)(?:\s+(?:hari|besok|lusa|sekarang|saat|minggu|nanti)|[?.!,]|$)/i);
+      var m = q.match(/(?:cuaca|suhu|prakiraan|hujan)\\s+(?:di\\s+|kota\\s+)?([a-zA-Z ]{3,30}?)(?:\\s+(?:hari|besok|lusa|sekarang|saat|minggu|nanti)|[?.!,]|$)/i);
       if (m) jobs.push(safe(weather(m[1].trim()), 'Cuaca'));
     }
     if (eq) jobs.push(safe(quake(), 'Gempa (BMKG)'));
     if (!jobs.length) return '';
-    var out = (await Promise.all(jobs)).filter(Boolean).join('\n\n');
-    return out.slice(0, 7000);
+    var out = (await Promise.all(jobs)).filter(Boolean).join('\\n\\n');
+    return out.slice(0, 9000);
   }
-
   async function enrich(body) {
     try {
       var cs = body.contents || [], last = cs[cs.length - 1];
@@ -114,7 +125,7 @@
       var note = '\n\nDATA PENCARIAN (diambil dari beberapa sumber). Gunakan sebagai rujukan utama, cantumkan tautan sumber yang dipakai dalam format [judul](url), bandingkan sumber bila berbeda, dan jangan mengarang di luar data ini. Jika data tidak relevan, abaikan.\n' + ctx;
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
-      delete body.tools; delete body.toolConfig;
+      if (ctx.indexOf('[Pencarian web gagal]') < 0) { delete body.tools; delete body.toolConfig; }
       return true;
     } catch (e) { return false; }
   }
