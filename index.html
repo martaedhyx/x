@@ -67,11 +67,14 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 .msg.bot{align-self:stretch;font:17px/1.65 var(--serif);overflow-wrap:anywhere}
 .msg.bot p{margin:0 0 .8em}
 .msg.bot em{font-style:italic}
-.msg.bot .md-table-wrap{max-width:100%;overflow-x:auto;margin:.8em 0;border:1px solid var(--line);border-radius:10px}
-.msg.bot .md-table{border-collapse:collapse;width:100%;font:14px/1.45 var(--sans);min-width:420px}
-.msg.bot .md-table th,.msg.bot .md-table td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
-.msg.bot .md-table th{font-weight:700;background:var(--code)}
-.msg.bot .md-table tr:last-child td{border-bottom:0}
+.msg.bot .md-table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;margin:1em 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.msg.bot .md-table{border-collapse:separate;border-spacing:0;width:100%;font:13.5px/1.55 var(--sans);min-width:660px;table-layout:fixed}
+.msg.bot .md-table th,.msg.bot .md-table td{width:25%;padding:11px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere;word-break:normal}
+.msg.bot .md-table th{font-size:12px;font-weight:750;letter-spacing:.025em;background:var(--code);color:var(--text)}
+.msg.bot .md-table th:first-child,.msg.bot .md-table td:first-child{width:105px;font-weight:700}
+.msg.bot .md-table tbody tr:nth-child(even){background:rgba(127,127,127,.055)}
+.msg.bot .md-table tbody tr:last-child td{border-bottom:0}
+.msg.bot .md-table td br{display:block;content:"";margin:.35em 0}
 .msg.bot .mermaid-block{max-width:100%;overflow-x:auto;margin:.8em 0;padding:12px;background:var(--code);border:1px solid var(--line);border-radius:10px;text-align:center}
 .msg.bot .mermaid-block svg{max-width:100%;height:auto}
 .msg.bot .edhychart-wrap{position:relative;width:100%;height:280px;margin:.8em 0;padding:12px;background:var(--code);border:1px solid var(--line);border-radius:10px}
@@ -472,7 +475,7 @@ input, textarea{font-size:17.6px!important}
       if(!/^https?:\/\//i.test(raw))return '';
       var safe=raw.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
       return '<img class="site-icon" src="'+safe+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">';
-    }).replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,function(_,alt,url){
+    }).replace(/\\?&lt;br\s*\/?&gt;/gi,'<br>').replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,function(_,alt,url){
       var safeUrl=url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       var safeAlt=alt.replace(/"/g,'&quot;');
       return '<a class="md-image-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer"><img class="md-image-thumb" src="'+safeUrl+'" alt="'+safeAlt+'" loading="lazy" decoding="async"></a>';
@@ -498,12 +501,16 @@ input, textarea{font-size:17.6px!important}
       var m;
       if(line.indexOf('|')!==-1 && i+1<lines.length && isSep(lines[i+1])){
         close();var heads=cells(line),rows=[],j=i+2;
-        while(j<lines.length&&lines[j].trim()&&lines[j].indexOf('|')!==-1){rows.push(cells(lines[j]));j++;}
+        while(j<lines.length&&lines[j].trim()&&lines[j].indexOf('|')!==-1&&!isSep(lines[j])){rows.push(cells(lines[j]));j++;}
         out+='<div class="md-table-wrap"><table class="md-table"><thead><tr>';
         heads.forEach(function(c){out+='<th>'+inline(c)+'</th>';});
         out+='</tr></thead><tbody>';
         rows.forEach(function(row){out+='<tr>';heads.forEach(function(_,k){out+='<td>'+inline(row[k]||'')+'</td>';});out+='</tr>';});
         out+='</tbody></table></div>';i=j-1;
+      }else if(isSep(line)){
+        close();var j=i+1;
+        while(j<lines.length&&lines[j].trim()&&lines[j].indexOf('|')!==-1)j++;
+        i=j-1;
       }else if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';}
       else if((m=line.match(/^\s*[-*]\s+(.*)/))){if(mode!=='ul'){close();out+='<ul>';mode='ul';}out+='<li>'+inline(m[1])+'</li>';}
       else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){if(mode!=='ol'){close();out+='<ol>';mode='ol';}out+='<li>'+inline(m[1])+'</li>';}
