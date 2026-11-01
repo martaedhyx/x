@@ -488,6 +488,8 @@ input, textarea{font-size:17.6px!important}
       // url di sini sudah ter-escape oleh esc(), decode dulu untuk parsing hostname
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
+      var sourcePath=''; try{sourcePath=new URL(rawUrl).pathname.toLowerCase();}catch(e){}
+      if(new RegExp('(^|/)(tag|tags|topic|topics|category|categories|search|cari)(/|$)','i').test(sourcePath)) return '<span>'+String(label).replace(/^(image|favicon)\\s*/i,'').trim()+' — halaman kategori, bukan artikel pendukung</span>';
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
       label=String(label).replace(/^(image|favicon)\s*/i,'').trim() || host;
       // escape " dan ' agar tidak bisa break-out dari atribut href
@@ -608,7 +610,7 @@ input, textarea{font-size:17.6px!important}
           var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
           ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
         }
-        var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\\s*/i,'').trim() || host || 'Situs sumber';
+        var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\s*/i,'').trim() || host || 'Situs sumber';
         var meta=el('span','src-meta'); meta.appendChild(el('strong','',sourceTitle));
         if(host)meta.appendChild(el('small','',host));
         a2.appendChild(meta); sd.appendChild(a2);
