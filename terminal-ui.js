@@ -50,6 +50,19 @@ style.textContent = `
       .edhy-term.is-maximized{inset:0;border:0}
       .edhy-term.is-maximized .edhy-term-output{min-height:120px}
     }
+
+    .edhy-monitor{width:100%;max-width:980px;margin:12px auto;background:#020704;border:1px solid #164b2b;border-radius:10px;overflow:hidden;color:#00ff66;font:13px/1.55 Consolas,monospace;box-shadow:0 12px 35px #0009}
+    .edhy-monitor-head,.edhy-monitor-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:#07150c;border-bottom:1px solid #164b2b}
+    .edhy-monitor-title{font:700 12px/1.4 Consolas,monospace!important;letter-spacing:1px;color:#00ff66!important}
+    .edhy-monitor-win{width:20px;height:20px;fill:#00ff66;flex:none}
+    .edhy-monitor-output{height:290px;overflow:auto;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:#020704;color:#00ff66;font:12px/1.65 Consolas,monospace}
+    .edhy-monitor-line-ok{color:#62ff9a}.edhy-monitor-line-info{color:#b4ffc9}
+    .edhy-monitor-foot{border-top:1px solid #164b2b;border-bottom:0;font-size:10px}
+    .edhy-monitor-clock{font:700 11px/1.4 Consolas,monospace;color:#70ff9b;font-variant-numeric:tabular-nums;text-align:right}
+    .edhy-monitor-cursor{display:inline-block;width:7px;height:13px;background:#00ff66;vertical-align:-2px;animation:edhyBlink .9s steps(2,start) infinite}
+    @keyframes edhyBlink{to{visibility:hidden}}
+    @media(max-width:560px){.edhy-monitor{margin:8px auto;border-radius:5px}.edhy-monitor-output{height:270px;padding:10px}.edhy-monitor-head,.edhy-monitor-foot{padding:10px}}
+
   `;
 
   document.head.appendChild(style);
@@ -149,14 +162,72 @@ style.textContent = `
     card.scrollIntoView({behavior:'smooth',block:'center'});
   }
 
+
+  function openMonitoring(){
+    var wrap=$('#wrap'); if(!wrap)return;
+    var old=$('#edhySystemMonitor',wrap);
+    if(old){old.scrollIntoView({behavior:'smooth',block:'center'});return;}
+    var card=document.createElement('section');
+    card.id='edhySystemMonitor';card.className='edhy-monitor';
+    card.innerHTML=`
+      <div class="edhy-monitor-head">
+        <strong class="edhy-monitor-title">EDHY SYSTEM MONITORING</strong>
+        <svg class="edhy-monitor-win" viewBox="0 0 24 24" aria-label="Windows"><path d="M2 5.2 10.7 4v7.9H2zm9.7-1.4L22 2.4v9.5H11.7zM2 12.9h8.7v7.9L2 19.6zm9.7 0H22v9.5l-10.3-1.4z"/></svg>
+      </div>
+      <div class="edhy-monitor-output" role="log" aria-live="polite"></div>
+      <div class="edhy-monitor-foot"><span>SYS://EDHY-CORE</span><time class="edhy-monitor-clock">--/--/----</time></div>`;
+    wrap.appendChild(card);
+    var output=$('.edhy-monitor-output',card), clock=$('.edhy-monitor-clock',card);
+    var lines=[
+      ['root@edhy:~$ boot --system',''],
+      ['[ OK ] Initializing system core...','ok'],
+      ['[ OK ] Loading AI neural modules','ok'],
+      ['[ OK ] Establishing secure session','ok'],
+      ['> scanning memory blocks...','info'],
+      ['0x00AF  0x19BC  0xFE21  0x0A77',''],
+      ['01001001 01001110 01001001 01010100',''],
+      ['> analyzing system data...','info'],
+      ['[ INFO ] Signal detected','info'],
+      ['[ OK ] Security layer active','ok'],
+      ['> connecting intelligence engine...','info'],
+      ['handshake://secure/channel',''],
+      ['[ OK ] Connection established','ok'],
+      ['> optimizing response engine...','info'],
+      ['████████████████░░ 82%',''],
+      ['[ OK ] System monitoring active','ok'],
+      ['root@edhy:~$ monitor --live','']
+    ];
+    var i=0,timer=null,closed=false;
+    function updateClock(){
+      var now=new Date();
+      clock.textContent=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(now);
+    }
+    function tick(){
+      if(closed)return;
+      var item=lines[i++%lines.length],line=document.createElement('div');
+      line.textContent=item[0];
+      if(item[1])line.className='edhy-monitor-line-'+item[1];
+      output.appendChild(line);
+      while(output.children.length>16)output.firstChild.remove();
+      output.scrollTop=output.scrollHeight;
+      timer=setTimeout(tick,380);
+    }
+    updateClock();
+    var clockTimer=setInterval(updateClock,1000);
+    card._edhyCleanup=function(){closed=true;clearTimeout(timer);clearInterval(clockTimer);};
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    tick();
+  }
+
   // Tangkap hanya permintaan eksplisit agar pesan terminal tidak dikirim ke model chat.
   document.addEventListener('submit',function(e){
     if(!e.target || e.target.id!=='form') return;
     var input=$('#text');
     var value=(input && input.value || '').trim();
+    if(/^(edhy[, ]*)?buka komputer[.! ]*$/i.test(value)){e.preventDefault();e.stopImmediatePropagation();input.value='';input.style.height='auto';openMonitoring();return;}
     if(!/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i.test(value)) return;
     e.preventDefault();e.stopImmediatePropagation();
     input.value='';input.style.height='auto';openTerminal();
   },true);
-  window.EdhyTerminal={open:openTerminal};
+  window.EdhyTerminal={open:openTerminal,openMonitoring:openMonitoring};
 })();
