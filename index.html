@@ -522,7 +522,7 @@ input, textarea{font-size:17.6px!important}
     }
     function cells(line){return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(v){return v.trim();});}
     function isSep(line){return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());}
-    function isSourceLine(line){var x=line.trim().replace(/^\\+/,'').replace(/^[-*]\s+/,'');return /^\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x)||/(?:<img\b|&lt;img\b)[\s\S]*?(?:https?:\/\/|favicons)/i.test(x)||/\[(?:image|favicon)[^\]]*\]\(https?:\/\//i.test(x);}return /^\[(?:image|favicon)?[^\]]*\]\(https?:\/\/[^)]+\)/i.test(x);}
+    function isSourceLine(line){var x=line.trim().replace(/^\\+/,'').replace(/^[-*]\s+/,'');return /^\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x)||/(?:<img\b|&lt;img\b)[\s\S]*?(?:https?:\/\/|favicons)/i.test(x)||/\[(?:image|favicon)[^\]]*\]\(https?:\/\//i.test(x);}
     lines.forEach(function(line,i){
       var m;
       if(line.indexOf('|')!==-1 && i+1<lines.length && isSep(lines[i+1])){
