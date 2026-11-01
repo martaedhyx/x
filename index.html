@@ -489,7 +489,7 @@ input, textarea{font-size:17.6px!important}
       var rawUrl = url.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
       var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
-      label=String(label).replace(/^(image|favicon)\\s*/i,'').trim() || host;
+      label=String(label).replace(/^(image|favicon)\s*/i,'').trim() || host;
       // escape " dan ' agar tidak bisa break-out dari atribut href
       var safeUrl = url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       return '<a class="md-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+ico+label+'</a>';
