@@ -49,6 +49,10 @@ function isDirectArticle(item) {
     const parts = path.split("/").filter(Boolean);
     const last = parts[parts.length - 1] || "";
     if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
+    const tail = parts.slice(-3);
+    if (tail.length >= 2 && /^(19|20)\d{2}$/.test(tail[0]) &&
+        /^(0?[1-9]|1[0-2])$/.test(tail[1]) &&
+        (tail.length === 2 || /^(0?[1-9]|[12]\d|3[01])$/.test(tail[2]))) return false;
     if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru|home|index)$/i.test(last)) return false;
     const title = clean(item.title || item.name, 300);
     const content = clean(item.content || item.description || item.snippet || item.text ||
