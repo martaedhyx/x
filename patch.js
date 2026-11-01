@@ -161,6 +161,39 @@
     } catch (e) { return false; }
   }
 
+  async function attachResearchSources(res, ctx) {
+    if (!ctx || !res || !res.ok) return res;
+    try {
+      var found = [], seen = Object.create(null);
+      ctx.split('\\n').forEach(function (line) {
+        var m = line.match(/^- \\[([^\\]]+)\\] (.*?) \\((https?:\\/\\/[^)]+)\\):/);
+        if (!m) return;
+        var title = String(m[2] || '').trim(), url = String(m[3] || '').trim();
+        try {
+          var u = new URL(url); u.hash = ''; u.search = '';
+          var key = u.href.replace(/\\/$/, '').toLowerCase();
+          if (!seen[key] && title && /^https?:$/.test(u.protocol)) {
+            seen[key] = true; found.push({ provider:m[1], title:title, url:url });
+          }
+        } catch (e) {}
+      });
+      if (!found.length) return res;
+      var data = await res.clone().json();
+      var parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      if (!parts || !parts.length) return res;
+      var target = parts.find(function (p) { return typeof p.text === 'string' && !p.thought; });
+      if (!target) return res;
+      var list = found.map(function (x) {
+        return '- [' + x.title.replace(/\\[/g, '\\\\[').replace(/\\]/g, '\\\\]') + '](' + x.url + ') — ' + x.provider;
+      }).join('\\n');
+      target.text += '\\n\\n### Sumber web yang ditemukan dan diperiksa\\n' + list;
+      var headers = new Headers(res.headers);
+      headers.delete('content-length'); headers.delete('content-encoding');
+      headers.set('content-type', 'application/json; charset=utf-8');
+      return new Response(JSON.stringify(data), { status:res.status, statusText:res.statusText, headers:headers });
+    } catch (e) { return res; }
+  }
+
   /* ---------- pembungkus fetch ke Gemini ---------- */
   async function hasAnswer(res) {
     if (!res.ok) return true;
@@ -229,6 +262,6 @@
         res = await orig(swap(url, BACKUP), withBody(opts, b3));
       }
     }
-    return res;
+    return attachResearchSources(res, researchContext);
   };
 })();
