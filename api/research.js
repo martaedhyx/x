@@ -88,17 +88,17 @@ async function fetchOgImage(articleUrl) {
     });
     if (!response.ok) return "";
     const html = (await response.text()).slice(0, 600000);
-    const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+    const tags = html.match(/<meta\b[^>]*>/gi) || [];
     let raw = "";
     for (const tag of tags) {
-      const property = (tag.match(/\\b(?:property|name)\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      const property = (tag.match(/\b(?:property|name)\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
       if (!/^(og:image|og:image:url|twitter:image|twitter:image:src)$/i.test(property)) continue;
-      raw = (tag.match(/\\bcontent\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      raw = (tag.match(/\bcontent\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
       if (raw) break;
     }
     if (!raw) {
-      const link = html.match(/<link\\b[^>]*rel=["'][^"']*image_src[^"']*["'][^>]*>/i);
-      if (link) raw = (link[0].match(/\\bhref\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      const link = html.match(/<link\b[^>]*rel=["'][^"']*image_src[^"']*["'][^>]*>/i);
+      if (link) raw = (link[0].match(/\bhref\s*=\s*["']([^"']+)["']/i) || [])[1] || "";
     }
     raw = raw.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
     if (!raw || /^data:/i.test(raw)) return "";
