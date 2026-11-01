@@ -472,7 +472,7 @@ input, textarea{font-size:17.6px!important}
       if(!/^https?:\/\//i.test(raw))return '';
       var safe=raw.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
       return '<img class="site-icon" src="'+safe+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">';
-    }).replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)function(_,alt,url){
+    }).replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,function(_,alt,url){
       var safeUrl=url.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       var safeAlt=alt.replace(/"/g,'&quot;');
       return '<a class="md-image-link" href="'+safeUrl+'" target="_blank" rel="noopener noreferrer"><img class="md-image-thumb" src="'+safeUrl+'" alt="'+safeAlt+'" loading="lazy" decoding="async"></a>';
