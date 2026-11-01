@@ -7,7 +7,7 @@
   var patchedFetch = window.fetch.bind(window);
   var WEB = /\\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\\b/i;
   var qkey = function(){ return ld('groq_key', ''); };
-  var qmodel = function(){ return ld('groq_model', 'llama-3.3-70b-versatile'); };
+  var qmodel = function(){ return ld('groq_model', 'openai/gpt-oss-120b'); };
   var mode = function(){ return ld('groq_mode', 'auto'); };
 
   function textOnly(b){
@@ -107,14 +107,15 @@
   box.innerHTML =
     '<label for="gqk">API key Groq<span>Dibuat di console.groq.com. Disimpan hanya di browser ini.</span></label>' +
     '<input id="gqk" type="password" autocomplete="off" placeholder="gsk_...">' +
-    '<label for="gqm">Model Groq<span>Dipakai untuk chat teks biasa.</span></label>' +
-    '<input id="gqm" placeholder="llama-3.3-70b-versatile">' +
+    '<label for="gqm">Model Groq gratis<span>Pilih model gratis Groq untuk chat teks. Batas pemakaian mengikuti kuota akun Groq.</span></label>' +
+    '<select id="gqm"><option value="openai/gpt-oss-120b">GPT-OSS 120B — paling kuat</option><option value="openai/gpt-oss-20b">GPT-OSS 20B — lebih ringan &amp; cepat</option><option value="qwen/qwen3.8-27b">Qwen 3.8 27B — penalaran &amp; umum</option></select>' +
     '<label for="gmode">Mode<span>Otomatis: Gemini utama, Groq sebagai cadangan untuk chat teks.</span></label>' +
     '<select id="gmode"><option value="auto">Otomatis</option><option value="gemini">Hanya Gemini</option><option value="groq">Utamakan Groq</option></select>';
   dlg.insertBefore(box, row);
   function fill(){
     $('gqk').value = qkey();
-    $('gqm').value = qmodel();
+    var savedModel = qmodel();
+    $('gqm').value = ['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.8-27b'].indexOf(savedModel) >= 0 ? savedModel : 'openai/gpt-oss-120b';
     $('gmode').value = mode();
   }
   new MutationObserver(function(){ if (dlg.open) fill(); })
