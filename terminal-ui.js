@@ -6,33 +6,33 @@
   var $ = function(s, root){ return (root || document).querySelector(s); };
   var style = document.createElement('style');
 style.textContent = `
-    .edhy-term{width:100%;max-width:980px;margin:12px auto;background:#f3f3f3;border:1px solid #8b8b8b;border-radius:3px;overflow:hidden;color:#171717;font:13px/1.5 "Segoe UI",system-ui,sans-serif;box-shadow:0 14px 38px #0009}
+    .edhy-term{width:100%;max-width:980px;margin:12px auto;background:#f3f3f3;border:1px solid #8b8b8b;border-radius:3px;overflow:hidden;color:#171717;font:11px/1.4 "Segoe UI",system-ui,sans-serif;box-shadow:0 14px 38px #0009}
     .edhy-term.is-maximized{position:fixed;inset:8px;z-index:99999;width:auto;max-width:none;max-height:none;margin:0;display:flex;flex-direction:column}
-    .edhy-term-head{height:38px;min-height:38px;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;background:#0878d1;color:#fff;border-bottom:1px solid #075fa8;user-select:none}
+    .edhy-term-head{height:34px;min-height:34px;display:flex;align-items:center;gap:7px;padding:0 0 0 10px;background:#0878d1;color:#fff;border-bottom:1px solid #075fa8;user-select:none}
     .edhy-term-appicon{width:19px;height:19px;display:grid;place-items:center;background:#fff;color:#0878d1;font:700 13px/1 ui-monospace,monospace;border-radius:2px}
-    .edhy-term-title{flex:1;color:#fff;font-size:13px!important;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .edhy-term-title{flex:1;color:#fff;font-size:11px!important;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .edhy-win-controls{height:100%;display:flex;align-items:stretch}
     .edhy-win-control{width:44px;border:0;background:transparent;color:#fff;font:16px/1 "Segoe UI",sans-serif;cursor:pointer}
     .edhy-win-control:hover{background:#ffffff28}
     .edhy-win-control.edhy-win-close:hover{background:#e81123}
-    .edhy-term-body{padding:13px;background:#f3f3f3;min-height:0}
+    .edhy-term-body{padding:10px;background:#f3f3f3;min-height:0}
     .edhy-term-config{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
-    .edhy-term input{min-width:0;width:100%;border:1px solid #aaa;border-radius:0;background:#fff;color:#171717;padding:9px 10px;font:13px "Segoe UI",system-ui,sans-serif}
+    .edhy-term input{min-width:0;width:100%;border:1px solid #aaa;border-radius:0;background:#fff;color:#171717;padding:7px 8px;font:11px "Segoe UI",system-ui,sans-serif}
     .edhy-term input:focus{outline:1px solid #0078d4;outline-offset:0;border-color:#0078d4}
     .edhy-term button{cursor:pointer}
-    .edhy-term .edhy-action{border:1px solid #adadad;border-radius:2px;background:#e1e1e1;color:#171717;padding:8px 13px;font:13px "Segoe UI",system-ui,sans-serif;box-shadow:inset 0 1px #fff}
+    .edhy-term .edhy-action{border:1px solid #adadad;border-radius:2px;background:#e1e1e1;color:#171717;padding:6px 10px;font:11px "Segoe UI",system-ui,sans-serif;box-shadow:inset 0 1px #fff}
     .edhy-term .edhy-action:hover:not(:disabled){background:#e5f1fb;border-color:#0078d4}
     .edhy-term .edhy-action:disabled{opacity:.5;cursor:default}
     .edhy-term .edhy-start{background:#e5f1fb;color:#075b9b;border-color:#0078d4;font-weight:600}
     .edhy-term-toolbar{display:flex;gap:7px;margin-bottom:10px}
-    .edhy-term-output{min-height:210px;max-height:44vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#090d12;border:1px solid #252b33;border-radius:0;padding:13px;color:#e6edf5;font:13px/1.55 Consolas,"Courier New",monospace}
+    .edhy-term-output{min-height:210px;max-height:44vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#090d12;border:1px solid #252b33;border-radius:0;padding:10px;color:#e6edf5;font:11px/1.45 Consolas,"Courier New",monospace}
     .edhy-term-line{display:flex;gap:7px;margin:10px 0 0}.edhy-term-line input{flex:1}
-    .edhy-term-hint{color:#505050;font:12px/1.5 "Segoe UI",system-ui,sans-serif;margin:0 0 10px}
+    .edhy-term-hint{color:#505050;font:10px/1.4 "Segoe UI",system-ui,sans-serif;margin:0 0 8px}
     .edhy-term-error{color:#ff9292}.edhy-term-ok{color:#9bf4b0}
-    .edhy-term-taskbar{height:36px;display:flex;align-items:center;gap:9px;padding:0 10px;background:#202020;color:#eee;font:12px "Segoe UI",sans-serif}
+    .edhy-term-taskbar{height:32px;display:flex;align-items:center;gap:7px;padding:0 9px;background:#202020;color:#eee;font:10px "Segoe UI",sans-serif}
     .edhy-task-start{height:28px;width:30px;display:grid;place-items:center;color:#fff;font-size:19px!important;background:transparent;border:0}
     .edhy-task-start:hover{background:#ffffff20}
-    .edhy-task-app{height:28px;display:flex;align-items:center;gap:7px;padding:0 10px;background:#343434;border-bottom:2px solid #49a6e9;color:#fff}
+    .edhy-task-app{height:25px;display:flex;align-items:center;gap:6px;padding:0 8px;background:#343434;border-bottom:2px solid #49a6e9;color:#fff}
     .edhy-task-spacer{flex:1}
     .edhy-task-clock{font-variant-numeric:tabular-nums;color:#eee}
     .edhy-term.is-minimized .edhy-term-body,.edhy-term.is-minimized .edhy-term-taskbar{display:none}
@@ -40,13 +40,13 @@ style.textContent = `
     .edhy-term.is-maximized .edhy-term-output{flex:1;max-height:none}
     @media(max-width:560px){
       .edhy-term{border-radius:2px;margin:8px auto}
-      .edhy-term-head{height:36px;min-height:36px;padding-left:8px}
+      .edhy-term-head{height:33px;min-height:33px;padding-left:8px}
       .edhy-win-control{width:38px}
-      .edhy-term-body{padding:9px}
+      .edhy-term-body{padding:8px}
       .edhy-term-config{grid-template-columns:1fr}
-      .edhy-term-output{min-height:170px;max-height:38vh;padding:10px}
+      .edhy-term-output{min-height:160px;max-height:38vh;padding:8px;font-size:10px;line-height:1.4}
       .edhy-term-line{gap:5px}
-      .edhy-term .edhy-action{padding:8px 9px}
+      .edhy-term .edhy-action{padding:6px 8px;font-size:10px}
       .edhy-term.is-maximized{inset:0;border:0}
       .edhy-term.is-maximized .edhy-term-output{min-height:120px}
     }
