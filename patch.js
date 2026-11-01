@@ -157,7 +157,7 @@
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
       // Pertahankan Google Search/URL Context sebagai jalur tambahan jika backend tidak menemukan artikel langsung.
-      return true;
+      return ctx;
     } catch (e) { return false; }
   }
 
@@ -210,6 +210,7 @@
     var m = url.match(/models\/([^:\/?]+)/);
     var used = m ? decodeURIComponent(m[1]) : '';
     var isImg = /image/.test(used);
+    var researchContext = '';
     var body = null;
     try { body = JSON.parse(opts.body); } catch (e) {}
 
@@ -234,8 +235,9 @@
           '\n\nEDHY VISUAL & DOCUMENT ENGINE: Pilih format visual sesuai permintaan pengguna. Jika diminta tabel biasa, tulis tabel Markdown standar dengan baris header dan pemisah |---| agar dirender sebagai tabel sungguhan. Jika diminta diagram alur atau diagram hubungan, keluarkan satu blok kode berbahasa mermaid berisi sintaks Mermaid yang valid, misalnya flowchart TD dengan node A[Langkah] dan B[Hasil]. Jika diminta grafik, keluarkan satu blok kode berbahasa edhychart yang isinya JSON valid dengan bentuk {"type":"bar|line|pie|doughnut","title":"Judul","labels":["Label 1","Label 2"],"datasets":[{"label":"Nama seri","data":[10,20]}]}. Gunakan hanya data yang tersedia; jangan mengarang angka. Jika diminta membuat file Word atau PDF, keluarkan satu blok edhydocument berisi JSON valid: {"title":"Judul dokumen","blocks":[{"type":"heading","text":"Judul bagian"},{"type":"paragraph","text":"Isi paragraf"},{"type":"bullet","text":"Poin"},{"type":"table","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jika diminta file Excel, keluarkan satu blok edhyexcel berisi JSON valid: {"title":"Nama buku kerja","sheets":[{"name":"Data","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jangan bungkus JSON dengan teks tambahan di dalam blok tersebut. Di luar blok, berikan pengantar singkat. Pastikan JSON valid, string memakai tanda kutip ganda, dan tidak ada koma tambahan. Untuk permintaan Word/PDF/Excel, hasil harus berupa struktur lengkap yang siap diunduh, bukan sekadar petunjuk.';
 
       } catch (e) {}
-      if (await enrich(body)) opts = withBody(opts, body);
-      else opts = withBody(opts, body);
+      var enrichedContext = await enrich(body);
+      if (enrichedContext) researchContext = enrichedContext;
+      opts = withBody(opts, body);
     }
 
     var res = await orig(url, opts);
