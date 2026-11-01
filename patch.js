@@ -61,6 +61,10 @@
             if (/(?:ai\\s+daily|daily\\s+ai|daily briefing|news roundup|ai news.*(?:today|daily)|(?:today|daily).*ai news)/i.test(title)) return false;
             var parts = path.split('/').filter(Boolean), last = parts[parts.length - 1] || '';
             if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
+            var dateTail = parts.slice(-3);
+            if (dateTail.length >= 2 && /^(19|20)\d{2}$/.test(dateTail[0]) &&
+                /^(0?[1-9]|1[0-2])$/.test(dateTail[1]) &&
+                (dateTail.length === 2 || /^(0?[1-9]|[12]\d|3[01])$/.test(dateTail[2]))) return false;
             if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru)$/i.test(last)) return false;
             if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 60) return false;
             u.hash = ''; u.search = '';
