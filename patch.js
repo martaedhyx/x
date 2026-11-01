@@ -78,7 +78,8 @@
       return rows.map(function (r) {
         return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Artikel') +
           ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800) +
-          (r.image ? ' [THUMBNAIL: ' + r.image + ']' : '');
+          (r.image ? ' [THUMBNAIL: ' + r.image + ']' : '') +
+          (r.favicon ? ' [SITE_ICON: ' + r.favicon + ']' : '');
       }).join('\\n');
     });
   }
@@ -176,11 +177,13 @@
         var title = String(m[2] || '').trim(), url = String(m[3] || '').trim();
         var imageAt = line.indexOf('[THUMBNAIL: ');
         var imageUrl = imageAt >= 0 ? line.slice(imageAt + 12).split(']')[0].trim() : '';
+        var iconAt = line.indexOf('[SITE_ICON: ');
+        var faviconUrl = iconAt >= 0 ? line.slice(iconAt + 12).split(']')[0].trim() : '';
         try {
           var u = new URL(url); u.hash = ''; u.search = '';
           var key = u.href.replace(/\/$/, '').toLowerCase();
           if (!seen[key] && title && /^https?:$/.test(u.protocol)) {
-            seen[key] = true; found.push({ provider:m[1], title:title, url:url, image:imageUrl });
+            seen[key] = true; found.push({ provider:m[1], title:title, url:url, image:imageUrl, favicon:faviconUrl });
           }
         } catch (e) {}
       });
@@ -191,7 +194,8 @@
       var target = parts.find(function (p) { return typeof p.text === 'string' && !p.thought; });
       if (!target) return res;
       var list = found.map(function (x) {
-        return '- [' + x.title.replace(/\\[/g, '(').replace(/\\]/g, ')') + '](' + x.url + ') — ' + x.provider +
+        return (x.favicon ? '![logo situs](' + x.favicon + ') ' : '') +
+          '[' + x.title.replace(/\\[/g, '(').replace(/\\]/g, ')') + '](' + x.url + ') — ' + x.provider +
           (x.image ? ' ![thumbnail artikel](' + x.image + ')' : '');
       }).join('\\n');
       target.text += '\n\n### Sumber web yang ditemukan dan diperiksa\n' + list;
