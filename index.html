@@ -473,8 +473,9 @@ input, textarea{font-size:17.6px!important}
     // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
     // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
     s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=&lt;img\b)/g,'')
-      .replace(/\(\s*\[image\]\(https?:\/\/www\.google\.com\/s2\/favicons[^)]*\)\s*\)/gi,'')
-      .replace(/\[image([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)');
+      .replace(/\(\s*\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)\s*\)/gi,'')
+      .replace(/\[(?:image|favicon)\s*([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)')
+      .replace(/\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)/gi,'');
     return s.replace(/&lt;img\b[\s\S]*?\bsrc=(?:"([^"]*)"|'([^']*)')[\s\S]*?\/?&gt;/gi,function(_,quoted,single){
       var raw=(quoted||single||'').replace(/^\[(https?:\/\/[^\]]+)\]\((https?:\/\/[^)]+)\)$/i,'$2').replace(/&amp;/g,'&');
       if(!/^https?:\/\//i.test(raw))return '';
@@ -602,10 +603,16 @@ input, textarea{font-size:17.6px!important}
     });
     if (m.src && m.src.length){
       var sd = el('div','src'); sd.appendChild(el('span','src-heading','Sumber'));
+      var seenSourceUris=Object.create(null);
       m.src.forEach(function(z){
-        var a2=el('a','src-card'),host='';
+        var a2=el('a','src-card'),host='',canonical='';
+        try{
+          var su=new URL(z.uri); if(!/^https?:$/.test(su.protocol))return;
+          su.hash=''; su.search=''; canonical=su.href.replace(/\/$/,'').toLowerCase();
+        }catch(e){return;}
+        if(seenSourceUris[canonical])return; seenSourceUris[canonical]=true;
         a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
-        try{host=new URL(z.uri).hostname.replace(/^www\./,'');}catch(e){}
+        host=(new URL(z.uri)).hostname.replace(/^www\./,'');
         if(host){
           var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
           ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
