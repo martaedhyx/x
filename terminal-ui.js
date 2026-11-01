@@ -219,17 +219,25 @@ style.textContent = `
     tick();
   }
 
-  // Tangkap perintah di fase capture langsung pada form sebelum handler chat utama.
+  // Tangkap perintah lokal sebelum pesan diteruskan ke model AI.
+  function normalizeCommand(value){
+    return String(value || '').toLocaleLowerCase('id-ID').trim().replace(/\s+/g,' ').replace(/[.!?]+$/,'');
+  }
+  function isComputerCommand(value){
+    return /^(?:(?:edhy)[, ]+)?(?:tolong\s+)?(?:buka|tampilkan|jalankan)\s+(?:(?:panel|dasbor)\s+)?(?:edhyx\s+)?(?:computer|komputer|monitoring(?:\s+sistem)?|kontrol\s+sistem)(?:\s+sekarang)?$/i.test(normalizeCommand(value));
+  }
+  function isTerminalCommand(value){
+    return /^(?:(?:edhy)[, ]+)?(?:tolong\s+)?(?:buka|akses|jalankan|masuk ke)\s+terminal$/i.test(normalizeCommand(value));
+  }
   function handleEdhyCommand(e){
     var input=$('#text');
-    var value=(input && input.value || '').trim().replace(/\\s+/g,' ');
-    var computer=/^(edhy[, ]*)?(buka|tampilkan|jalankan) (komputer|edhyx computer)[.! ]*$/i;
-    var terminal=/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i;
-    if(!computer.test(value) && !terminal.test(value)) return;
+    var value=input && input.value || '';
+    var computer=isComputerCommand(value), terminal=isTerminalCommand(value);
+    if(!computer && !terminal) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     if(input){input.value='';input.style.height='auto';}
-    if(computer.test(value)) openMonitoring();
+    if(computer) openMonitoring();
     else openTerminal();
   }
   var chatForm=$('#form');
