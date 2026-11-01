@@ -51,17 +51,17 @@ style.textContent = `
       .edhy-term.is-maximized .edhy-term-output{min-height:120px}
     }
 
-    .edhy-monitor{width:100%;max-width:980px;margin:12px auto;background:#020704;border:1px solid #164b2b;border-radius:10px;overflow:hidden;color:#00ff66;font:13px/1.55 Consolas,monospace;box-shadow:0 12px 35px #0009}
-    .edhy-monitor-head,.edhy-monitor-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:#07150c;border-bottom:1px solid #164b2b}
-    .edhy-monitor-title{font:700 12px/1.4 Consolas,monospace!important;letter-spacing:1px;color:#00ff66!important}
+    .edhy-monitor{width:100%;max-width:980px;margin:12px auto;background:#020704;border:1px solid #164b2b;border-radius:10px;overflow:hidden;color:#00ff66;font:10px/1.4 Consolas,monospace;box-shadow:0 12px 35px #0009}
+    .edhy-monitor-head,.edhy-monitor-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#07150c;border-bottom:1px solid #164b2b}
+    .edhy-monitor-title{font:700 10px/1.3 Consolas,monospace!important;letter-spacing:.7px;color:#00ff66!important}
     .edhy-monitor-win{width:20px;height:20px;fill:#00ff66;flex:none}
-    .edhy-monitor-output{height:290px;overflow:auto;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:#020704;color:#00ff66;font:12px/1.65 Consolas,monospace}
+    .edhy-monitor-output{height:260px;overflow:auto;padding:9px 10px;white-space:pre-wrap;overflow-wrap:anywhere;background:#020704;color:#00ff66;font:10px/1.45 Consolas,monospace}
     .edhy-monitor-line-ok{color:#62ff9a}.edhy-monitor-line-info{color:#b4ffc9}
-    .edhy-monitor-foot{border-top:1px solid #164b2b;border-bottom:0;font-size:10px}
-    .edhy-monitor-clock{font:700 11px/1.4 Consolas,monospace;color:#70ff9b;font-variant-numeric:tabular-nums;text-align:right}
+    .edhy-monitor-foot{border-top:1px solid #164b2b;border-bottom:0;font-size:8px;letter-spacing:.2px}
+    .edhy-monitor-clock{font:700 9px/1.3 Consolas,monospace;color:#70ff9b;font-variant-numeric:tabular-nums;text-align:right}
     .edhy-monitor-cursor{display:inline-block;width:7px;height:13px;background:#00ff66;vertical-align:-2px;animation:edhyBlink .9s steps(2,start) infinite}
     @keyframes edhyBlink{to{visibility:hidden}}
-    @media(max-width:560px){.edhy-monitor{margin:8px auto;border-radius:5px}.edhy-monitor-output{height:270px;padding:10px}.edhy-monitor-head,.edhy-monitor-foot{padding:10px}}
+    @media(max-width:560px){.edhy-monitor{margin:8px auto;border-radius:5px}.edhy-monitor-output{height:235px;padding:8px;font-size:9px;line-height:1.4}.edhy-monitor-head,.edhy-monitor-foot{padding:7px 9px}.edhy-monitor-title{font-size:9px!important}.edhy-monitor-clock{font-size:8px}}
 
   `;
 
