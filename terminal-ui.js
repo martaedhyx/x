@@ -219,15 +219,20 @@ style.textContent = `
     tick();
   }
 
-  // Tangkap hanya permintaan eksplisit agar pesan terminal tidak dikirim ke model chat.
-  document.addEventListener('submit',function(e){
-    if(!e.target || e.target.id!=='form') return;
+  // Tangkap perintah di fase capture langsung pada form sebelum handler chat utama.
+  function handleEdhyCommand(e){
     var input=$('#text');
-    var value=(input && input.value || '').trim();
-    if(/^(edhy[, ]*)?buka komputer[.! ]*$/i.test(value)){e.preventDefault();e.stopImmediatePropagation();input.value='';input.style.height='auto';openMonitoring();return;}
-    if(!/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i.test(value)) return;
-    e.preventDefault();e.stopImmediatePropagation();
-    input.value='';input.style.height='auto';openTerminal();
-  },true);
+    var value=(input && input.value || '').trim().replace(/\\s+/g,' ');
+    var computer=/^(edhy[, ]*)?(buka|tampilkan|jalankan) (komputer|edhyx computer)[.! ]*$/i;
+    var terminal=/^(edhy[, ]*)?(buka|akses|jalankan|masuk ke) terminal[.! ]*$/i;
+    if(!computer.test(value) && !terminal.test(value)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(input){input.value='';input.style.height='auto';}
+    if(computer.test(value)) openMonitoring();
+    else openTerminal();
+  }
+  var chatForm=$('#form');
+  if(chatForm) chatForm.addEventListener('submit',handleEdhyCommand,true);
   window.EdhyTerminal={open:openTerminal,openMonitoring:openMonitoring};
 })();
