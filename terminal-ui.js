@@ -77,7 +77,7 @@ style.textContent = `
   async function request(action, extra){
     if(!API) throw new Error('Isi URL backend Vercel terlebih dahulu.');
     if(!accessKey) throw new Error('Isi Kode Akses Terminal terlebih dahulu.');
-    var response = await fetch(API.replace(/\\/$/, '') + '/api/terminal', {
+    var response = await fetch(API.replace(/\/$/, '') + '/api/terminal', {
       method:'POST', headers:{'Content-Type':'application/json','X-Terminal-Key':accessKey},
       body:JSON.stringify(Object.assign({action:action,token:token}, extra || {}))
     });
@@ -122,7 +122,7 @@ style.textContent = `
     wrap.appendChild(card);
     var output = $('.edhy-term-output',card), cmd = $('.edhy-command',card), run = $('.edhy-run',card), start = $('.edhy-start',card), stop = $('.edhy-stop',card);
     $('.edhy-api',card).value = API;
-    $('.edhy-api',card).addEventListener('change',function(){API=this.value.trim().replace(/\\/$/,'');});
+    $('.edhy-api',card).addEventListener('change',function(){API=this.value.trim().replace(/\/$/,'');});
     $('.edhy-key',card).addEventListener('change',function(){accessKey=this.value.trim();});
     $('.edhy-win-close',card).addEventListener('click',function(){card.remove();});
     $('.edhy-win-min',card).addEventListener('click',function(){card.classList.toggle('is-minimized');});
@@ -132,7 +132,7 @@ style.textContent = `
       $('.edhy-win-max',card).title = card.classList.contains('is-maximized') ? 'Restore' : 'Maximize';
     });
     start.addEventListener('click',async function(){
-      API=$('.edhy-api',card).value.trim().replace(/\\/$/,'');
+      API=$('.edhy-api',card).value.trim().replace(/\/$/,'');
       accessKey=$('.edhy-key',card).value.trim();
       start.disabled=true; appendOutput(output,'Menyiapkan sandbox...','edhy-term-ok');
       try{
