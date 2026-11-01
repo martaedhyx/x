@@ -48,12 +48,21 @@
       var rows = d.sources || [];
       // Berita harus merujuk artikel, bukan halaman tag/topik/kategori atau beranda.
       if ((action || 'search') === 'search') {
+        var seenArticleUrls = Object.create(null);
         rows = rows.filter(function (r) {
           try {
-            var u = new URL(r.url), path = u.pathname.toLowerCase(); while (path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+            var u = new URL(r.url), path = u.pathname.toLowerCase();
+            while (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
             if (!/^https?:$/.test(u.protocol) || !u.hostname) return false;
-            if (!path || path === '/' || new RegExp('(^|/)(tag|tags|topic|topics|category|categories|search|cari|author|authors)(/|$)','i').test(path)) return false;
+            if (!path || path === '/' || new RegExp('(^|/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives)(/|$)','i').test(path)) return false;
+            var parts = path.split('/').filter(Boolean), last = parts[parts.length - 1] || '';
+            if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
+            if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru)$/i.test(last)) return false;
             if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 100) return false;
+            u.hash = ''; u.search = '';
+            var canonical = u.href.replace(/\/$/, '').toLowerCase();
+            if (seenArticleUrls[canonical]) return false;
+            seenArticleUrls[canonical] = true;
             return true;
           } catch (e) { return false; }
         });
@@ -140,7 +149,7 @@
       if (!tp) return false;
       var ctx = await gather(tp.text);
       if (!ctx) return false;
-      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk berita terkini, hanya gunakan artikel spesifik yang isi artikelnya relevan dan mendukung klaim. Jangan gunakan halaman tag, topik, kategori, hasil pencarian, atau beranda sebagai bukti berita. Setiap klaim penting harus diikuti tautan langsung ke artikel pendukung. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika sumber artikel spesifik tidak ditemukan atau data tidak mendukung klaim, katakan terus terang bahwa belum dapat diverifikasi. Tampilkan nama media normal tanpa awalan kata image atau kode ikon.\n' + ctx;
+      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk daftar beberapa berita, setiap berita wajib didukung artikel spesifik yang isi dan judulnya relevan. Jangan gunakan halaman tag, topik, kategori, arsip tanggal, hasil pencarian, atau beranda sebagai bukti. Jangan memakai URL artikel yang sama untuk dua berita berbeda; setiap berita harus punya tautan artikel berbeda dan langsung. Jika sumber berbeda tidak cukup, tampilkan lebih sedikit berita dan jelaskan kekurangannya—jangan memaksakan jumlah. Tanggal terbit harus berasal dari artikel, bukan tanggal pencarian atau tanggal arsip. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika klaim tidak didukung isi artikel, tandai belum terverifikasi atau hilangkan. Tampilkan nama media normal tanpa awalan kata image/favicon dan tanpa kode ikon.\n' + ctx;
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
       if (ctx.indexOf('[Pencarian web gagal]') < 0) { delete body.tools; delete body.toolConfig; }
