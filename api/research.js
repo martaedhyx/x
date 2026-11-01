@@ -42,18 +42,18 @@ function isDirectArticle(item) {
   if (!url) return false;
   try {
     const u = new URL(url);
-    let path = u.pathname.toLowerCase().replace(/\\/+$/, "") || "/";
+    const path = u.pathname.toLowerCase().replace(/\/+$/, "") || "/";
     if (path === "/") return false;
-    const blocked = /(^|\\/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives|hub|today|daily|digest|roundup|briefing|feed|feeds|page|pages)(\\/|$)/i;
+    const blocked = /(^|\/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives|hub|today|daily|digest|roundup|briefing|feed|feeds|page|pages)(\/|$)/i;
     if (blocked.test(path)) return false;
     const parts = path.split("/").filter(Boolean);
     const last = parts[parts.length - 1] || "";
-    if (/^(19|20)\\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\\d|3[01]))?$/.test(last)) return false;
+    if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
     if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru|home|index)$/i.test(last)) return false;
     const title = clean(item.title || item.name, 300);
     const content = clean(item.content || item.description || item.snippet || item.text ||
       (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800);
-    if (title.length < 9 || content.replace(/\\s+/g, " ").trim().length < 60) return false;
+    if (title.length < 9 || content.replace(/\s+/g, " ").trim().length < 60) return false;
     if (/^(home|homepage|beranda|latest news|ai news|berita terbaru|search results?)$/i.test(title)) return false;
     return true;
   } catch {
@@ -167,7 +167,9 @@ export default async function handler(req, res) {
   const unique = [];
   const seen = new Set();
   for (const item of sources) {
-    if (!isDirectArticle(item)) continue;\n    const parsed = new URL(item.url); parsed.hash = ""; parsed.search = "";\n    const key = parsed.toString().replace(/\\/$/, "").toLowerCase();
+    if (!isDirectArticle(item)) continue;
+    const parsed = new URL(item.url); parsed.hash = ""; parsed.search = "";
+    const key = parsed.toString().replace(/\/$/, "").toLowerCase();
     if (!seen.has(key)) { seen.add(key); unique.push(item); }
   }
   if (!unique.length) {
