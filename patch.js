@@ -43,7 +43,7 @@
       return (d.sources || []).map(function (r) {
         return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Sumber') +
           ' (' + r.url + '): ' + String(r.content || '').slice(0, 1400);
-      }).join('\\n');
+      }).join('\n');
     });
   }
   function wiki(q, lang) {
@@ -87,18 +87,18 @@
 
   async function gather(q) {
     var s = q.toLowerCase(), jobs = [];
-    var pageMatch = q.match(/https?:\\/\\/[^\\s<>"']+/i);
+    var pageMatch = q.match(/https?:\/\/[^\s<>"']+/i);
     var pageUrl = pageMatch ? pageMatch[0].replace(/[),.;!?]+$/, '') : '';
-    var web = /\\b(sekarang|terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|tahun ini|update|berita|harga|tarif|kurs|jadwal|skor|rilis|versi|bandingkan|telusuri|cari|search|latest|news|today)\\b/.test(s) || !!pageUrl;
-    var fact = /\\b(siapa|apa itu|apa yang|sejarah|jelaskan|pengertian|definisi|kapan|di mana|dimana|berapa|ibu kota|biografi)\\b/.test(s);
-    var sci = /\\b(jurnal|penelitian|riset|studi|paper|ilmiah|skripsi|referensi)\\b/.test(s);
-    var wx = /\\b(cuaca|suhu|prakiraan|hujan)\\b/.test(s), eq = /\\b(gempa)\\b/.test(s);
-    var clean = q.replace(/\\b(tolong|dong|sih|ya|apa itu|siapa|jelaskan|apa kabar)\\b/gi, '').replace(/[?!]/g, '').trim() || q;
+    var web = /\b(sekarang|terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|tahun ini|update|berita|harga|tarif|kurs|jadwal|skor|rilis|versi|bandingkan|telusuri|cari|search|latest|news|today)\b/.test(s) || !!pageUrl;
+    var fact = /\b(siapa|apa itu|apa yang|sejarah|jelaskan|pengertian|definisi|kapan|di mana|dimana|berapa|ibu kota|biografi)\b/.test(s);
+    var sci = /\b(jurnal|penelitian|riset|studi|paper|ilmiah|skripsi|referensi)\b/.test(s);
+    var wx = /\b(cuaca|suhu|prakiraan|hujan)\b/.test(s), eq = /\b(gempa)\b/.test(s);
+    var clean = q.replace(/\b(tolong|dong|sih|ya|apa itu|siapa|jelaskan|apa kabar)\b/gi, '').replace(/[?!]/g, '').trim() || q;
     if (pageUrl) {
       jobs.push(safe(research(q, 'read', pageUrl), 'Isi halaman web (Vercel)'));
     } else if (web || fact) {
       jobs.push(research(q, 'search').then(function (t) {
-        return t ? '[Web & berita (backend Vercel)]\\n' + t : '';
+        return t ? '[Web & berita (backend Vercel)]\n' + t : '';
       }).catch(function (e) {
         return '[Pencarian web gagal] Backend Vercel: ' + String(e.message || e) + '. Jangan mengarang hasil atau sumber; jika Google Search tersedia, gunakan alat tersebut.';
       }));
@@ -106,12 +106,12 @@
     if (fact || sci) { jobs.push(safe(wiki(clean, 'id'), 'Wikipedia ID')); jobs.push(safe(wiki(clean, 'en'), 'Wikipedia EN')); }
     if (sci) jobs.push(safe(openalex(clean), 'Jurnal (OpenAlex)'));
     if (wx) {
-      var m = q.match(/(?:cuaca|suhu|prakiraan|hujan)\\s+(?:di\\s+|kota\\s+)?([a-zA-Z ]{3,30}?)(?:\\s+(?:hari|besok|lusa|sekarang|saat|minggu|nanti)|[?.!,]|$)/i);
+      var m = q.match(/(?:cuaca|suhu|prakiraan|hujan)\s+(?:di\s+|kota\s+)?([a-zA-Z ]{3,30}?)(?:\s+(?:hari|besok|lusa|sekarang|saat|minggu|nanti)|[?.!,]|$)/i);
       if (m) jobs.push(safe(weather(m[1].trim()), 'Cuaca'));
     }
     if (eq) jobs.push(safe(quake(), 'Gempa (BMKG)'));
     if (!jobs.length) return '';
-    var out = (await Promise.all(jobs)).filter(Boolean).join('\\n\\n');
+    var out = (await Promise.all(jobs)).filter(Boolean).join('\n\n');
     return out.slice(0, 9000);
   }
   async function enrich(body) {
