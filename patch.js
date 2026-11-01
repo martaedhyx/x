@@ -77,8 +77,9 @@
       }
       return rows.map(function (r) {
         return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Artikel') +
-          ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800);
-      }).join('\n');
+          ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800) +
+          (r.image ? ' [THUMBNAIL: ' + r.image + ']' : '');
+      }).join('\\n');
     });
   }
   function wiki(q, lang) {
@@ -173,11 +174,13 @@
         var m = line.match(/^- \[([^\]]+)\] (.*?) \((https?:\/\/[^)]+)\):/);
         if (!m) return;
         var title = String(m[2] || '').trim(), url = String(m[3] || '').trim();
+        var imageMatch = line.match(/\\[THUMBNAIL:\\s*(https?:\\/\\/[^\\]\\s]+)\\]/i);
+        var imageUrl = imageMatch ? imageMatch[1] : '';
         try {
           var u = new URL(url); u.hash = ''; u.search = '';
-          var key = u.href.replace(/\/$/, '').toLowerCase();
+          var key = u.href.replace(/\\/$/, '').toLowerCase();
           if (!seen[key] && title && /^https?:$/.test(u.protocol)) {
-            seen[key] = true; found.push({ provider:m[1], title:title, url:url });
+            seen[key] = true; found.push({ provider:m[1], title:title, url:url, image:imageUrl });
           }
         } catch (e) {}
       });
@@ -188,8 +191,9 @@
       var target = parts.find(function (p) { return typeof p.text === 'string' && !p.thought; });
       if (!target) return res;
       var list = found.map(function (x) {
-        return '- [' + x.title.replace(/\[/g, '(').replace(/\]/g, ')') + '](' + x.url + ') — ' + x.provider;
-      }).join('\n');
+        return '- [' + x.title.replace(/\\[/g, '(').replace(/\\]/g, ')') + '](' + x.url + ') — ' + x.provider +
+          (x.image ? ' ![thumbnail artikel](' + x.image + ')' : '');
+      }).join('\\n');
       target.text += '\n\n### Sumber web yang ditemukan dan diperiksa\n' + list;
       var headers = new Headers(res.headers);
       headers.delete('content-length'); headers.delete('content-encoding');
