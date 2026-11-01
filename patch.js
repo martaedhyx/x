@@ -45,9 +45,35 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: action || 'search', query: q, url: pageUrl || '' })
     }).then(function (d) {
-      return (d.sources || []).map(function (r) {
-        return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Sumber') +
-          ' (' + r.url + '): ' + String(r.content || '').slice(0, 1400);
+      var rows = d.sources || [];
+      // Berita harus merujuk artikel, bukan halaman tag/topik/kategori atau beranda.
+      if ((action || 'search') === 'search') {
+        var seenArticleUrls = Object.create(null);
+        rows = rows.filter(function (r) {
+          try {
+            var u = new URL(r.url), path = u.pathname.toLowerCase();
+            while (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+            if (!/^https?:$/.test(u.protocol) || !u.hostname) return false;
+            if (!path || path === '/' || new RegExp('(^|/)(tag|tags|topic|topics|category|categories|search|cari|author|authors|archive|archives|hub)(/|$)','i').test(path)) return false;
+            // Tolak halaman feed/rangkuman harian; bukan artikel primer untuk satu klaim.
+            if (new RegExp('(^|/)(today|daily|digest|roundup|briefing)(/|$)','i').test(path)) return false;
+            var title = String(r.title || '').trim();
+            if (/(?:ai\\s+daily|daily\\s+ai|daily briefing|news roundup|ai news.*(?:today|daily)|(?:today|daily).*ai news)/i.test(title)) return false;
+            var parts = path.split('/').filter(Boolean), last = parts[parts.length - 1] || '';
+            if (/^(19|20)\d{2}([-/](0?[1-9]|1[0-2]))?([-/](0?[1-9]|[12]\d|3[01]))?$/.test(last)) return false;
+            if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru)$/i.test(last)) return false;
+            if (String(r.title || '').trim().length <= 8 || String(r.content || '').trim().length < 100) return false;
+            u.hash = ''; u.search = '';
+            var canonical = u.href.replace(/\/$/, '').toLowerCase();
+            if (seenArticleUrls[canonical]) return false;
+            seenArticleUrls[canonical] = true;
+            return true;
+          } catch (e) { return false; }
+        });
+      }
+      return rows.map(function (r) {
+        return '- [' + (r.provider || 'Web') + '] ' + (r.title || 'Artikel') +
+          ' (' + r.url + '): ' + String(r.content || '').slice(0, 1800);
       }).join('\n');
     });
   }
@@ -103,10 +129,10 @@
       jobs.push(safe(research(q, 'read', pageUrl), 'Isi halaman web (Vercel)'));
     } else if (web || fact) {
       jobs.push(research(q, 'search').then(function (t) {
-        return t ? '[Web & berita (backend Vercel)]\n' + t : '';
+        return t ? '[Artikel web/berita yang lolos pemeriksaan tautan]\n' + t :
+          '[Sumber artikel spesifik tidak ditemukan] Hasil pencarian hanya berisi halaman umum/tag/kategori atau tidak memiliki isi artikel yang cukup. Jangan menyajikan klaim berita terkini sebagai fakta dan jangan membuat judul, tanggal, atau tautan sendiri. Katakan bahwa sumber artikel belum berhasil ditemukan.';
       }).catch(function (e) {
-        return '[Pencarian web gagal] Backend Vercel: ' + String(e.message || e) + '. Jangan mengarang hasil atau sumber; jika Google Search tersedia, gunakan alat tersebut.';
-      }));
+        return '[Pencarian web gagal] Backend Vercel: ' + String(e.message || e) + '. Jangan mengarang hasil atau sumber; jika Google Search tersedia, gunakan alat tersebut.';      }));
     }
     if (fact || sci) { jobs.push(safe(wiki(clean, 'id'), 'Wikipedia ID')); jobs.push(safe(wiki(clean, 'en'), 'Wikipedia EN')); }
     if (sci) jobs.push(safe(openalex(clean), 'Jurnal (OpenAlex)'));
@@ -127,7 +153,7 @@
       if (!tp) return false;
       var ctx = await gather(tp.text);
       if (!ctx) return false;
-      var note = '\n\nDATA PENCARIAN (diambil dari beberapa sumber). Gunakan sebagai rujukan utama, cantumkan tautan sumber yang dipakai dalam format [judul](url), bandingkan sumber bila berbeda, dan jangan mengarang di luar data ini. Jika data tidak relevan, abaikan.\n' + ctx;
+      var note = '\n\nATURAN KETAT SUMBER DAN BERITA: Data berikut bukan bukti otomatis bahwa setiap klaim benar. Untuk daftar beberapa berita, setiap berita wajib didukung oleh artikel tersendiri yang isi dan judulnya langsung relevan dengan klaim tersebut. Gunakan URL artikel asli dari media, bukan halaman agregator/rangkuman harian/feed seperti /today, /hub/, /digest/, /roundup/ atau /briefing. Jangan memakai halaman tag, topik, kategori, arsip tanggal, hasil pencarian, atau beranda sebagai bukti. Satu berita = satu URL artikel spesifik; jangan memakai URL yang sama untuk dua berita berbeda. Jangan menulis tautan generik berlabel Baca selengkapnya; label tautan harus berupa judul artikel atau nama media yang benar. Jika artikel langsung yang berbeda tidak cukup, tampilkan lebih sedikit berita dan jelaskan kekurangannya—jangan memaksakan jumlah. Tanggal terbit harus berasal dari artikel, bukan tanggal pencarian atau tanggal arsip. Jangan mengarang nama media, judul, tanggal, kutipan, angka, atau URL. Jika klaim tidak didukung isi artikel, tandai belum terverifikasi atau hilangkan. Tampilkan nama media normal tanpa awalan kata image/favicon dan tanpa kode ikon.\n' + ctx;
       if (!body.system_instruction) body.system_instruction = { parts: [{ text: '' }] };
       body.system_instruction.parts[0].text += note;
       if (ctx.indexOf('[Pencarian web gagal]') < 0) { delete body.tools; delete body.toolConfig; }

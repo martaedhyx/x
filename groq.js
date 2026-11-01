@@ -5,7 +5,7 @@
   function sv(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
   /* patch.js dimuat lebih dahulu; simpan wrapper-nya agar konteks waktu dan pencarian Gemini tetap berjalan. */
   var patchedFetch = window.fetch.bind(window);
-  var WEB = /\\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\\b/i;
+  var WEB = /\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\b/i;
   var qkey = function(){ return ld('groq_key', ''); };
   var qmodel = function(){ return ld('groq_model', 'openai/gpt-oss-120b'); };
   var mode = function(){ return ld('groq_mode', 'auto'); };
@@ -40,6 +40,27 @@
     });
     return { model:qmodel(), messages:msgs };
   }
+  /* AUTO SMART ROUTER: pilih Groq untuk tugas ringan; Gemini untuk tugas yang butuh riset/konteks khusus. */
+  function shouldUseGroq(b){
+    var list=b.contents||[], q='';
+    for(var i=list.length-1;i>=0;i--){
+      if(list[i].role==='user'){
+        q=(list[i].parts||[]).map(function(p){return p.text||'';}).join('\n').trim();
+        break;
+      }
+    }
+    if(!q) return false;
+    var low=q.toLowerCase();
+    /* Jangan lewatkan tugas yang membutuhkan pencarian, pembacaan URL, multimodal, atau engine visual Edhy. */
+    var needsGemini=/https?:\/\/|\b(terbaru|terkini|hari ini|kemarin|minggu ini|bulan ini|berita|news|harga|kurs|cuaca|gempa|skor|jadwal|cari|telusuri|search|riset|penelitian|jurnal|referensi|sumber|sitasi|bandingkan|analisis mendalam|analisis kompleks|langkah demi langkah|buktikan|apa itu|siapa|sejarah|pengertian|definisi|kapan|di mana|dimana|berapa|kode|coding|program|debug|javascript|python|sql|api|error|bug|tabel|grafik|diagram|mermaid|excel|pdf|word|dokumen|gambar|lampiran|file|visual|reasoning|deep research|think carefully)\b/i.test(low);
+    if(needsGemini || q.length>1800) return false;
+    /* Permintaan menulis ringan, terjemahan, ringkasan, dan percakapan cepat cocok untuk Groq. */
+    var quick=/\b(tulis|buat caption|caption|terjemahkan|translate|terjemah|rapikan teks|perbaiki kalimat|parafrase|paraphrase|ringkas|rangkum|summarize|rewrite|draft|balas pesan|ucapan|ide sederhana|sapaan)\b/i.test(low);
+    if(quick && q.length<=1800) return true;
+    /* Untuk pertanyaan pendek sehari-hari, prioritaskan respons cepat Groq. */
+    return q.length<=220 && !/[{}<>]/.test(q);
+  }
+
   function fake(t){
     return new Response(JSON.stringify({ candidates:[{ content:{ parts:[{ text:t }] } }] }),
       { status:200, headers:{ 'Content-Type':'application/json' } });
@@ -74,10 +95,10 @@
     var b;
     try { b = JSON.parse(o.body); } catch(e){ return patchedFetch(u, o); }
     var canQ = !!qkey() && mode() !== 'gemini' && textOnly(b);
-    var preferGroq = mode() === 'groq' && canQ;
+    var preferGroq = canQ && (mode() === 'groq' || (mode() === 'auto' && shouldUseGroq(b)));
     var tried = false;
 
-    /* Mode Groq: coba Groq lebih dahulu. Mode Otomatis: Gemini tetap utama. */
+    /* Mode manual Groq atau AUTO SMART: Groq lebih dahulu; jika gagal, Gemini mengambil alih. */
     if (preferGroq){
       try { var first = await groq(b, o.signal); note('Groq'); return fake(first); }
       catch(e){ if (o.signal && o.signal.aborted) throw e; tried = true; }
@@ -109,7 +130,7 @@
     '<input id="gqk" type="password" autocomplete="off" placeholder="gsk_...">' +
     '<label for="gqm">Model Groq gratis<span>Pilih model gratis Groq untuk chat teks. Batas pemakaian mengikuti kuota akun Groq.</span></label>' +
     '<select id="gqm"><option value="openai/gpt-oss-120b">GPT-OSS 120B — paling kuat</option><option value="openai/gpt-oss-20b">GPT-OSS 20B — lebih ringan &amp; cepat</option><option value="qwen/qwen3.8-27b">Qwen 3.8 27B — penalaran &amp; umum</option></select>' +
-    '<label for="gmode">Mode<span>Otomatis: Gemini utama, Groq sebagai cadangan untuk chat teks.</span></label>' +
+    '<label for="gmode">Mode<span>AUTO SMART: Groq untuk tugas ringan, Gemini untuk riset dan tugas kompleks; keduanya saling backup.</span></label>' +
     '<select id="gmode"><option value="auto">Otomatis</option><option value="gemini">Hanya Gemini</option><option value="groq">Utamakan Groq</option></select>';
   dlg.insertBefore(box, row);
   function fill(){
