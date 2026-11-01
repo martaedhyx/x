@@ -68,13 +68,44 @@ function isDirectArticle(item) {
 function source(provider, item) {
   const url = clean(item.url || item.link, MAX_URL);
   if (!/^https?:\/\//i.test(url)) return null;
+  const image = safeUrl(item.image || item.thumbnail || item.image_url || item.thumbnail_url || "");
   return {
     provider,
     title: clean(item.title || item.name || url, 300),
     url,
+    image,
     content: clean(item.content || item.description || item.snippet || item.text ||
       (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800)
   };
+}
+
+async function fetchOgImage(articleUrl) {
+  try {
+    const response = await fetch(articleUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EdhyXBot/1.0)", Accept: "text/html,application/xhtml+xml" },
+      signal: AbortSignal.timeout(7000),
+      redirect: "follow"
+    });
+    if (!response.ok) return "";
+    const html = (await response.text()).slice(0, 600000);
+    const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+    let raw = "";
+    for (const tag of tags) {
+      const property = (tag.match(/\\b(?:property|name)\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      if (!/^(og:image|og:image:url|twitter:image|twitter:image:src)$/i.test(property)) continue;
+      raw = (tag.match(/\\bcontent\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+      if (raw) break;
+    }
+    if (!raw) {
+      const link = html.match(/<link\\b[^>]*rel=["'][^"']*image_src[^"']*["'][^>]*>/i);
+      if (link) raw = (link[0].match(/\\bhref\\s*=\\s*["']([^"']+)["']/i) || [])[1] || "";
+    }
+    raw = raw.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
+    if (!raw || /^data:/i.test(raw)) return "";
+    return safeUrl(new URL(raw, response.url || articleUrl).toString());
+  } catch {
+    return "";
+  }
 }
 
 async function tavilySearch(query) {
@@ -120,6 +151,7 @@ async function firecrawlRead(url) {
     provider: "Firecrawl",
     title: clean((d.metadata || {}).title || url, 300),
     url: clean((d.metadata || {}).sourceURL || url, MAX_URL),
+    image: safeUrl((d.metadata || {}).ogImage || (d.metadata || {}).image || ""),
     content: clean(d.markdown || d.content || "", 12000)
   };
 }
@@ -179,10 +211,15 @@ export default async function handler(req, res) {
   if (!unique.length) {
     return res.status(502).json({ error: "Tidak ada hasil pencarian yang berhasil diperoleh.", configured, failedProviders: errors });
   }
+  const selected = unique.slice(0, MAX_SOURCES);
+  const enriched = await Promise.all(selected.map(async item => ({
+    ...item,
+    image: item.image || await fetchOgImage(item.url)
+  })));
   return res.status(200).json({
     action,
     query,
-    sources: unique.slice(0, MAX_SOURCES),
+    sources: enriched,
     configured,
     failedProviders: errors
   });
