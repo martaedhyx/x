@@ -505,7 +505,7 @@ input, textarea{font-size:17.6px!important}
       else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
       else if(!line.trim()){
         var nextLine=lines[i+1]||'';
-        if(!(mode==='ol' && /^\\s*\\d+[.)]\\s+/.test(nextLine))) close();
+        if(!(mode==='ol' && /^\s*\d+[.)]\\s+/.test(nextLine))) close();
       }
       else{close();out+='<p>'+inline(line)+'</p>';}
     });close();return out;
@@ -585,7 +585,7 @@ input, textarea{font-size:17.6px!important}
       m.src.forEach(function(z){
         var a2=el('a','src-card'),host='';
         a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
-        try{host=new URL(z.uri).hostname.replace(/^www\\./,'');}catch(e){}
+        try{host=new URL(z.uri).hostname.replace(/^www\./,'');}catch(e){}
         if(host){
           var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
           ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
