@@ -472,7 +472,7 @@ input, textarea{font-size:17.6px!important}
   function inline(s){
     // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
     // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
-    s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=&lt;img\b)/g,'')
+    s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=\[(?:image|favicon)\b)/gi,'').replace(/\\(?=&lt;img\b)/g,'')
       .replace(/\(\s*\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)\s*\)/gi,'')
       .replace(/\[(?:image|favicon)\s*([^\]]+)\]\((https?:\/\/[^)]+)\)/gi,'[$1]($2)')
       .replace(/\[(?:image|favicon)\]\(https?:\/\/[^)]*favicons[^)]*\)/gi,'');
@@ -506,6 +506,7 @@ input, textarea{font-size:17.6px!important}
     function close(){if(mode){out+='</'+mode+'>';mode='';}}
     function cells(line){return line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(v){return v.trim();});}
     function isSep(line){return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());}
+    function isSourceLine(line){var x=line.trim();return /^\\?\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x)&&!/^#{1,4}\s/.test(x);}
     lines.forEach(function(line,i){
       var m;
       if(line.indexOf('|')!==-1 && i+1<lines.length && isSep(lines[i+1])){
@@ -520,13 +521,15 @@ input, textarea{font-size:17.6px!important}
         close();var j=i+1;
         while(j<lines.length&&lines[j].trim()&&lines[j].indexOf('|')!==-1)j++;
         i=j-1;
-      }else if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';}
+      }else if(mode==='ol' && isSourceLine(line)){out+='<div class="list-source">'+inline(line)+'</div>';}
+      else if((m=line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)/))){close();var done=m[1].toLowerCase()==='x';out+='<ul><li class="task"><input type="checkbox" disabled '+(done?'checked':'')+'>'+inline(m[2])+'</li></ul>';}
       else if((m=line.match(/^\s*[-*]\s+(.*)/))){if(mode!=='ul'){close();out+='<ul>';mode='ul';}out+='<li>'+inline(m[1])+'</li>';}
       else if((m=line.match(/^\s*\d+[.)]\s+(.*)/))){if(mode!=='ol'){close();out+='<ol>';mode='ol';}out+='<li>'+inline(m[1])+'</li>';}
       else if((m=line.match(/^#{1,4}\s+(.*)/))){close();out+='<h3>'+inline(m[1])+'</h3>';}
       else if(!line.trim()){
-        var nextLine=lines[i+1]||'';
-        if(!(mode==='ol' && /^\s*\d+[.)]\s+/.test(nextLine))) close();
+        var nextIndex=i+1;while(nextIndex<lines.length&&!lines[nextIndex].trim())nextIndex++;
+        var nextLine=lines[nextIndex]||'';
+        if(!(mode==='ol' && (/^\s*\d+[.)]\s+/.test(nextLine)||isSourceLine(nextLine)))) close();
       }
       else{close();out+='<p>'+inline(line)+'</p>';}
     });close();return out;
