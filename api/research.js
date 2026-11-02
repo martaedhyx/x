@@ -100,7 +100,8 @@ function source(provider, item) {
     provider, title: clean(item.title || item.name, 300), publisher, publishedAt,
     url, image,
     content: clean(item.content || item.description || item.snippet || item.text ||
-      (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800)
+      (Array.isArray(item.highlights) ? item.highlights.join(" ") : "") ||
+      (Array.isArray(item.extra_snippets) ? item.extra_snippets.join(" ") : ""), 1800)
   };
 }
 
