@@ -68,6 +68,17 @@
       return !!(p && p.some(function(x){ return !x.thought && !!x.text; }));
     } catch(e){ return false; }
   }
+  async function hasGeminiSources(r){
+    if (!r || !r.ok) return false;
+    try {
+      var d = await r.clone().json();
+      var c = d.candidates && d.candidates[0];
+      var chunks = c && c.groundingMetadata && c.groundingMetadata.groundingChunks || [];
+      if (chunks.some(function(x){ var w=x.web || x.maps; return !!(w && /^https?:\\/\\//i.test(w.uri || '')); })) return true;
+      var parts = c && c.content && c.content.parts || [];
+      return parts.some(function(x){ return !x.thought && /\\[[^\\]]+\\]\\(https?:\\/\\/[^)]+\\)/i.test(x.text || ''); });
+    } catch(e){ return false; }
+  }
 
   var RESEARCH_API = 'https://xbot-gamma-hazel.vercel.app/api/research';
 
@@ -128,7 +139,23 @@
     var r, err;
     try {
       r = await patchedFetch(u, o);
-      if (await hasGeminiAnswer(r)){ note('Gemini'); return r; }
+      if (await hasGeminiAnswer(r)){
+        /* Jawaban Gemini tanpa sumber bukan hasil web yang terverifikasi.
+           Jika cadangan tersedia, cari sumber lewat Vercel lalu susun ulang dengan Groq. */
+        if (canWebQ && !(o.signal && o.signal.aborted) && !(await hasGeminiSources(r))){
+          try {
+            var groundedAnswer = await groqWebFallback(b, o.signal);
+            note('Groq + Web');
+            return fake(groundedAnswer);
+          } catch(fallbackError){
+            if (o.signal && o.signal.aborted) throw fallbackError;
+            note('Gemini');
+            return r;
+          }
+        }
+        note('Gemini');
+        return r;
+      }
     } catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
 
     /* Cadangan WEB: cari sumber lewat backend pencarian, lalu minta Groq menyusun jawaban bersumber. */
