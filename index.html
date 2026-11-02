@@ -468,6 +468,17 @@ input, textarea{font-size:17.6px!important}
   }
   function getChat(){ for (var i=0;i<chats.length;i++) if (chats[i].id === cur) return chats[i]; return null; }
 
+  function makeSourceIcon(host, origin, size, className){
+    var img=document.createElement('img'); img.className=className; img.alt=''; img.loading='lazy'; img.decoding='async';
+    var urls=[];
+    if(origin) urls.push(origin.replace(/\\/$/,'')+'/favicon.ico');
+    urls.push('https://icons.duckduckgo.com/ip3/'+encodeURIComponent(host)+'.ico');
+    urls.push('https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz='+size);
+    var next=0;
+    img.onerror=function(){ if(next<urls.length){this.src=urls[next++];}else{this.style.display='none';} };
+    img.src=urls[next++]; return img;
+  }
+
   /* ---------- tampilan teks ---------- */
   function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -639,8 +650,7 @@ input, textarea{font-size:17.6px!important}
         a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
         host=(new URL(z.uri)).hostname.replace(/^www\./,'');
         if(host){
-          var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
-          ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
+          var ico=makeSourceIcon(host, su.origin, 64, 'src-thumb'); a2.appendChild(ico);
         }
         var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\s*/i,'').trim() || host || 'Situs sumber';
         var meta=el('span','src-meta'); meta.appendChild(el('strong','',sourceTitle));
