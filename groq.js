@@ -5,7 +5,7 @@
   function sv(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
   /* patch.js dimuat lebih dahulu; simpan wrapper-nya agar konteks waktu dan pencarian Gemini tetap berjalan. */
   var patchedFetch = window.fetch.bind(window);
-  var WEB = /\\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\\b/i;
+  var WEB = /\b(terbaru|terkini|hari ini|berita|harga|kurs|cuaca|skor|jadwal|cari di web|search|latest|news|today)\b/i;
   var qkey = function(){ return ld('groq_key', ''); };
   var qmodel = function(){ return ld('groq_model', 'openai/gpt-oss-120b'); };
   var mode = function(){ return ld('groq_mode', 'auto'); };
@@ -107,12 +107,14 @@
     var data = await response.json().catch(function(){ return {}; });
     if (!response.ok) throw new Error(data.error || ('Mesin pencarian web gagal (HTTP ' + response.status + ').'));
     var sources = (data.sources || []).filter(function(x){
-      return x && x.url && x.title && x.publisher && x.publishedAt && x.content &&
-        /^https?:\/\//i.test(x.url) && Number.isFinite(Date.parse(x.publishedAt));
-    }).slice(0,8);
+      return x && x.url && x.title && x.content &&
+        /^https?:\/\//i.test(x.url) && String(x.content).trim().length >= 35;
+    }).slice(0,12);
     if (!sources.length) throw new Error('Mesin pencarian web tidak mengembalikan sumber yang dapat dibaca.');
     var context = sources.map(function(x,i){
-      return '[' + (i+1) + '] Judul artikel: ' + x.title + '\nPenerbit: ' + x.publisher + '\nTanggal publikasi: ' + x.publishedAt + '\nURL artikel: ' + x.url + '\nIsi: ' + String(x.content).slice(0,1800);
+      return '[' + (i+1) + '] Judul artikel: ' + x.title + '\nPenerbit: ' + (x.publisher || 'Tidak dicantumkan') +
+        (x.publishedAt ? '\nTanggal publikasi: ' + x.publishedAt : '') +
+        '\nURL artikel: ' + x.url + '\nIsi: ' + String(x.content).slice(0,1800);
     }).join('\n\n');
     var fallbackBody = JSON.parse(JSON.stringify(b));
     delete fallbackBody.tools;
@@ -120,7 +122,7 @@
     if (!fallbackBody.system_instruction) fallbackBody.system_instruction = { parts:[{ text:'' }] };
     if (!fallbackBody.system_instruction.parts || !fallbackBody.system_instruction.parts.length) fallbackBody.system_instruction.parts = [{ text:'' }];
     fallbackBody.system_instruction.parts[0].text +=
-      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Setiap berita WAJIB memiliki URL langsung artikel, judul artikel, nama penerbit, dan tanggal publikasi. Jangan gunakan homepage, kategori, tag, hasil pencarian, atau agregator sebagai URL berita. Jangan menebak metadata yang hilang. Jika satu unsur saja tidak tersedia, jangan sajikan berita tersebut; katakan "Sumber artikel belum ditemukan." Jangan mengganti URL artikel dengan halaman utama situs. Jawab dalam bahasa pengguna dan jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
+      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Cantumkan URL langsung artikel dan judulnya. Cantumkan penerbit serta tanggal hanya jika tersedia; jangan mengarang metadata. Jangan gunakan homepage, kategori, tag, hasil pencarian, atau agregator sebagai URL artikel. Jika sumber tidak memiliki isi yang cukup, jangan gunakan sumber tersebut. Jawab dalam bahasa pengguna dan jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
     return await groq(fallbackBody, signal);
   }
 
@@ -132,6 +134,7 @@
     var canWebQ = !!qkey() && mode() !== 'gemini' && isWebRequest(b);
     var preferGroq = mode() === 'groq' && canQ;
     var tried = false;
+    var webFallbackTried = false;
 
     /* Mode Groq: chat teks biasa boleh memakai Groq lebih dahulu. */
     if (preferGroq){
@@ -146,23 +149,24 @@
         /* Jawaban Gemini tanpa sumber bukan hasil web yang terverifikasi.
            Jika cadangan tersedia, cari sumber lewat Vercel lalu susun ulang dengan Groq. */
         if (canWebQ && !(o.signal && o.signal.aborted) && !(await hasGeminiSources(r))){
+          webFallbackTried = true;
           try {
             var groundedAnswer = await groqWebFallback(b, o.signal);
             note('Groq + Web');
             return fake(groundedAnswer);
           } catch(fallbackError){
             if (o.signal && o.signal.aborted) throw fallbackError;
-            note('Gemini');
-            return r;
+            err = fallbackError;
           }
+        } else {
+          note('Gemini');
+          return r;
         }
-        note('Gemini');
-        return r;
       }
     } catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
 
     /* Cadangan WEB: cari sumber lewat backend pencarian, lalu minta Groq menyusun jawaban bersumber. */
-    if (canWebQ && !(o.signal && o.signal.aborted)){
+    if (canWebQ && !webFallbackTried && !(o.signal && o.signal.aborted)){
       try {
         var webAnswer = await groqWebFallback(b, o.signal);
         note('Groq + Web');
@@ -178,8 +182,10 @@
       try { var backup = await groq(b, o.signal); note('Groq'); return fake(backup); }
       catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
     }
-    if (r) return r;
-    throw err || new Error('Gemini dan layanan cadangan tidak dapat dihubungi.');
+    if (r && !canWebQ) return r;
+    throw err || new Error(canWebQ
+      ? 'Pencarian web gagal. Edhy tidak menampilkan jawaban tanpa sumber terverifikasi.'
+      : 'Gemini dan layanan cadangan tidak dapat dihubungi.');
   };
 
   var dlg = $('dlg'), row = dlg && dlg.querySelector('.row');
