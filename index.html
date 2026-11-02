@@ -638,6 +638,13 @@ input, textarea{font-size:17.6px!important}
         data.metadata.forEach(function(meta){
           var key=sourceKey(meta.url);if(!key)return;
           var iconUrl=meta.favicon||'';
+          var sourceCard=root.querySelector('.src-card[data-source-key="'+key.replace(/"/g,'')+'"]');
+          if(sourceCard&&meta.title){
+            var titleNode=sourceCard.querySelector('.src-meta strong');
+            if(titleNode)titleNode.textContent=String(meta.title).trim();
+            sourceCard.setAttribute('aria-label','Buka sumber: '+String(meta.title).trim()+' ('+new URL(meta.url).hostname+')');
+            sourceCard.title=String(meta.title).trim()+' — '+new URL(meta.url).hostname;
+          }
           root.querySelectorAll('img[data-source-url]').forEach(function(img){
             if(sourceKey(img.getAttribute('data-source-url'))!==key)return;
             if(iconUrl){img.onerror=function(){if(this.dataset.fallback!=='google'){this.dataset.fallback='google';var h=new URL(meta.url).hostname;this.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(h)+'&sz=64';}else this.style.display='none';};img.src=iconUrl;}
