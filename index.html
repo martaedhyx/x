@@ -568,7 +568,7 @@ input, textarea{font-size:17.6px!important}
         if(liOpen)out+='</li>';
         out+='<li>'+inline(m[1]);liOpen=true;
       }else if((m=line.match(/^(#{1,4})\s+(.*)/))){
-        close();var level=Math.min(m[1].length+1,4);out+='<h'+level+'>'+inline(m[2])+'</h'+level+'>';
+        close();out+='<p>'+inline(m[2])+'</p>';
       }else if(!line.trim()){
         var nextIndex=i+1;while(nextIndex<lines.length&&!lines[nextIndex].trim())nextIndex++;
         var nextLine=lines[nextIndex]||'';
