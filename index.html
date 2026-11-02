@@ -945,17 +945,55 @@ input, textarea{font-size:17.6px!important}
     var txt = wait.lastChild;
     var ph = [], stTimer = null, pi = 0;
     if (asImage){
-      if (files.length) ph.push(['Membaca foto...', 1800, 'analyze']);
-      ph.push(['Memahami permintaan...', 2000, 'think'], ['Membuat gambar...', 7000, 'think'], ['Menyempurnakan detail...', 0, 'analyze']);
+      if (files.length) ph.push(['membaca lampiran...', 900, 'analyze']);
+      ph.push(['memahami permintaan...', 900, 'think'], ['menganalisis permintaan...', 900, 'analyze'], ['membuat gambar...', 1200, 'write'], ['menyempurnakan detail...', 0, 'analyze']);
     } else {
-      if (files.length) ph.push(['membaca lampiran...', 1800, 'analyze'], ['menganalisis lampiran...', 3000, 'analyze']);
-      ph.push(['berpikir...', 1800, 'think']);
-      if (locOn) ph.push(['Memeriksa lokasimu...', 2200, 'search']);
-      if (useWeb) ph.push(['menelusuri web...', 3500, 'search'], ['membaca dan membandingkan sumber...', 2500, 'analyze']);
-      ph.push(['menulis jawaban...', 0, 'write']);
+      if (files.length) ph.push(['membaca lampiran...', 850, 'analyze'], ['menganalisis lampiran...', 850, 'analyze'], ['mengambil informasi dari lampiran...', 850, 'analyze']);
+      ph.push(
+        ['menerima pertanyaan...', 650, 'think'],
+        ['memahami pertanyaan...', 650, 'think'],
+        ['mengidentifikasi maksud pertanyaan...', 650, 'think'],
+        ['mengumpulkan konteks...', 650, 'think'],
+        ['mencari informasi yang relevan...', 650, 'search'],
+        ['menentukan pendekatan...', 650, 'think'],
+        ['berpikir...', 650, 'think'],
+        ['menganalisis...', 650, 'analyze'],
+        ['memecahkan masalah...', 650, 'analyze'],
+        ['melakukan penalaran...', 650, 'think'],
+        ['memeriksa fakta...', 650, 'analyze']
+      );
+      if (locOn) ph.push(['memeriksa lokasi...', 750, 'search']);
+      if (useWeb) ph.push(
+        ['menelusuri web...', 750, 'search'],
+        ['mencari sumber...', 750, 'search'],
+        ['membuka halaman sumber...', 750, 'search'],
+        ['membaca sumber...', 750, 'analyze'],
+        ['mengambil informasi...', 750, 'analyze'],
+        ['memeriksa tautan...', 750, 'search'],
+        ['memeriksa tanggal informasi...', 750, 'analyze'],
+        ['memverifikasi sumber...', 750, 'analyze'],
+        ['membandingkan sumber...', 750, 'analyze'],
+        ['menilai kredibilitas sumber...', 750, 'analyze'],
+        ['mengumpulkan referensi...', 750, 'search'],
+        ['merangkum hasil penelusuran...', 750, 'analyze']
+      );
+      ph.push(
+        ['mengolah informasi...', 650, 'analyze'],
+        ['menyusun informasi...', 650, 'analyze'],
+        ['memeriksa konsistensi...', 650, 'analyze'],
+        ['memeriksa kelengkapan...', 650, 'analyze'],
+        ['melakukan perhitungan...', 650, 'analyze'],
+        ['mengolah data...', 650, 'analyze'],
+        ['menarik kesimpulan...', 650, 'think'],
+        ['menyusun jawaban...', 650, 'write'],
+        ['memeriksa jawaban...', 650, 'analyze'],
+        ['menyempurnakan jawaban...', 650, 'write'],
+        ['menulis jawaban...', 650, 'write'],
+        ['menyelesaikan jawaban...', 0, 'write']
+      );
     }
     (function showPhase(){
-      var cur2 = ph[pi]; txt.textContent = cur2[0]; Eyes.lock(cur2[2]);
+      var cur2 = ph[pi]; txt.textContent = 'edhyx ' + cur2[0]; Eyes.lock(cur2[2]);
       if (cur2[1] && pi < ph.length - 1){ pi++; stTimer = setTimeout(showPhase, cur2[1]); }
     })();
     chatEl.scrollTop = chatEl.scrollHeight;
