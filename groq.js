@@ -69,15 +69,57 @@
     } catch(e){ return false; }
   }
 
+  var RESEARCH_API = 'https://xbot-gamma-hazel.vercel.app/api/research';
+
+  function isWebRequest(b){
+    return !!(b.tools && b.tools.some(function(t){ return !!t.google_search; }));
+  }
+  function latestUserQuery(b){
+    var a = b.contents || [];
+    for (var i=a.length-1;i>=0;i--){
+      if (a[i].role === 'user'){
+        var q = (a[i].parts || []).map(function(p){ return p.text || ''; }).join(' ').trim();
+        if (q) return q;
+      }
+    }
+    return '';
+  }
+  async function groqWebFallback(b, signal){
+    var query = latestUserQuery(b);
+    if (!query) throw new Error('Pertanyaan pencarian web tidak ditemukan.');
+    var response = await window.fetch(RESEARCH_API, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ action:'search', query:query }),
+      signal:signal
+    });
+    var data = await response.json().catch(function(){ return {}; });
+    if (!response.ok) throw new Error(data.error || ('Mesin pencarian web gagal (HTTP ' + response.status + ').'));
+    var sources = (data.sources || []).filter(function(x){ return x && x.url && x.content; }).slice(0,8);
+    if (!sources.length) throw new Error('Mesin pencarian web tidak mengembalikan sumber yang dapat dibaca.');
+    var context = sources.map(function(x,i){
+      return '[' + (i+1) + '] ' + (x.title || 'Sumber') + '\nURL: ' + x.url + '\nIsi: ' + String(x.content).slice(0,1800);
+    }).join('\n\n');
+    var fallbackBody = JSON.parse(JSON.stringify(b));
+    delete fallbackBody.tools;
+    delete fallbackBody.toolConfig;
+    if (!fallbackBody.system_instruction) fallbackBody.system_instruction = { parts:[{ text:'' }] };
+    if (!fallbackBody.system_instruction.parts || !fallbackBody.system_instruction.parts.length) fallbackBody.system_instruction.parts = [{ text:'' }];
+    fallbackBody.system_instruction.parts[0].text +=
+      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Jawab dalam bahasa pengguna, jelaskan bila sumber tidak cukup, dan sertakan tautan Markdown ke sumber yang relevan. Jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
+    return await groq(fallbackBody, signal);
+  }
+
   window.fetch = async function(u, o){
     if (String(u).indexOf(GEM) < 0 || !o || !o.body) return patchedFetch(u, o);
     var b;
     try { b = JSON.parse(o.body); } catch(e){ return patchedFetch(u, o); }
     var canQ = !!qkey() && mode() !== 'gemini' && textOnly(b);
+    var canWebQ = !!qkey() && mode() !== 'gemini' && isWebRequest(b);
     var preferGroq = mode() === 'groq' && canQ;
     var tried = false;
 
-    /* Mode Groq: coba Groq lebih dahulu. Mode Otomatis: Gemini tetap utama. */
+    /* Mode Groq: chat teks biasa boleh memakai Groq lebih dahulu. */
     if (preferGroq){
       try { var first = await groq(b, o.signal); note('Groq'); return fake(first); }
       catch(e){ if (o.signal && o.signal.aborted) throw e; tried = true; }
@@ -89,13 +131,25 @@
       if (await hasGeminiAnswer(r)){ note('Gemini'); return r; }
     } catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
 
-    /* Cadangan Groq hanya untuk chat teks tanpa gambar atau tools khusus Gemini. */
+    /* Cadangan WEB: cari sumber lewat backend pencarian, lalu minta Groq menyusun jawaban bersumber. */
+    if (canWebQ && !(o.signal && o.signal.aborted)){
+      try {
+        var webAnswer = await groqWebFallback(b, o.signal);
+        note('Groq + Web');
+        return fake(webAnswer);
+      } catch(e){
+        if (o.signal && o.signal.aborted) throw e;
+        err = e;
+      }
+    }
+
+    /* Cadangan Groq untuk chat teks tanpa gambar atau tools khusus Gemini. */
     if (canQ && !tried && !(o.signal && o.signal.aborted)){
       try { var backup = await groq(b, o.signal); note('Groq'); return fake(backup); }
-      catch(e){ if (o.signal && o.signal.aborted) throw e; }
+      catch(e){ if (o.signal && o.signal.aborted) throw e; err = e; }
     }
     if (r) return r;
-    throw err || new Error('Gemini dan Groq tidak dapat dihubungi.');
+    throw err || new Error('Gemini dan layanan cadangan tidak dapat dihubungi.');
   };
 
   var dlg = $('dlg'), row = dlg && dlg.querySelector('.row');
