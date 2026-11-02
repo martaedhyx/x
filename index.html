@@ -1020,6 +1020,10 @@ input, textarea{font-size:17.6px!important}
           var w = ch.web || ch.maps;
           if (w && /^https?:\/\//.test(w.uri || '') && src.length < 6 && !src.some(function(z){ return z.uri === w.uri; })) src.push({ title: w.title || w.uri, uri: w.uri });
         });
+        var inlineSources = keep.some(function(p){ return /\[[^\]]+\]\(https?:\/\//i.test(p.text || ''); });
+        if (useWeb && !src.length && !inlineSources) {
+          keep.push({ text:'⚠ Pencarian web diminta, tetapi Google Search tidak mengembalikan sumber yang dapat ditampilkan. Jawaban ini belum terverifikasi dari sumber web.' });
+        }
         c.msgs.push({ role:'model', parts:keep, src:src });
         Eyes.unlock(); Eyes.aha(); Eyes.pulse('write', 2600);
         persist(); render(true);
