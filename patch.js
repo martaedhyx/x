@@ -264,18 +264,33 @@
     }
     if (isImg || !body) return res;
 
+    var requiresWeb = !!(body.tools && body.tools.some(function (t) { return !!t.google_search; }));
+    /* Jika kombinasi Google Search + URL Context ditolak, ulangi dengan Google Search saja.
+       Jangan pernah menghapus alat pencarian lalu menyajikan jawaban seolah-olah sudah menelusuri web. */
     if (!res.ok && [400, 403, 429].indexOf(res.status) >= 0 && body.tools) {
-      body = clone(body); delete body.tools; delete body.toolConfig;
-      res = await orig(url, withBody(opts, body));
+      var retryTools = clone(body);
+      if (requiresWeb) {
+        retryTools.tools = [{ google_search: {} }];
+      } else {
+        delete retryTools.tools;
+        delete retryTools.toolConfig;
+      }
+      res = await orig(url, withBody(opts, retryTools));
+      body = retryTools;
     }
     if (!(await hasAnswer(res))) {
       if (body.tools) {
         var b1 = clone(body); b1.tools = [{ google_search: {} }]; delete b1.toolConfig;
         res = await orig(url, withBody(opts, b1));
-        if (!(await hasAnswer(res))) { var b2 = clone(body); delete b2.tools; delete b2.toolConfig; res = await orig(url, withBody(opts, b2)); }
+        if (!(await hasAnswer(res)) && !requiresWeb) {
+          var b2 = clone(body); delete b2.tools; delete b2.toolConfig;
+          res = await orig(url, withBody(opts, b2));
+        }
       }
+      /* Fallback model tetap menerima alat pencarian jika pertanyaan memang membutuhkan web. */
       if (!(await hasAnswer(res)) && used !== BACKUP) {
-        var b3 = clone(body); delete b3.tools; delete b3.toolConfig;
+        var b3 = clone(body);
+        if (!requiresWeb) { delete b3.tools; delete b3.toolConfig; }
         res = await orig(swap(url, BACKUP), withBody(opts, b3));
       }
     }
