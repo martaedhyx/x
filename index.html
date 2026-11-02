@@ -1200,18 +1200,24 @@ input, textarea{font-size:17.6px!important}
   $('menuBtn').addEventListener('click', function(){ document.body.classList.add('open'); });
   $('scrim').addEventListener('click', closeMenu);
   $('newBtn').addEventListener('click', function(){
+  // Mulai percakapan benar-benar kosong, termasuk draf yang belum dikirim.
   cur = null;
-  text.value = '';
-  text.style.height = 'auto';
   pending = [];
   imageMode = false;
   searchOn = false;
   locOn = false;
   loc = null;
+  text.value = '';
+  text.defaultValue = '';
+  text.style.height = 'auto';
   renderChips();
   persist();
   render();
   closeMenu();
+  // Bersihkan sekali lagi setelah render agar draf lama tidak tertinggal.
+  text.value = '';
+  text.style.height = 'auto';
+  text.dispatchEvent(new Event('input', { bubbles: true }));
   text.focus();
 });
   $('clearHistoryBtn').addEventListener('click', function(){
