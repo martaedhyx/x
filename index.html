@@ -33,11 +33,11 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 #side{width:288px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;
   padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:30}
 .brand{display:flex;align-items:center;min-height:46px;padding:3px 14px 7px}
-.brand-name{font-family:var(--sans);font-size:17px;font-weight:700;line-height:1.4;color:#fff;letter-spacing:0}
+.brand-name{font-family:var(--sans);font-size:20.4px;font-weight:700;line-height:1.4;color:#fff;letter-spacing:0}
 #title{display:none!important}
 .newbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;font-weight:600;color:#fff;background:#000}
 .newbtn:hover,.ci:hover,.foot:hover{background:var(--hover)}
-.newbtn i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #fff;background:#000;color:#fff;font-style:normal;font-size:19.8px;line-height:1}
+.newbtn i,.clear-history i{display:inline-grid;place-items:center;width:26px;height:26px;flex:0 0 26px;border-radius:50%;border:1px solid #fff;background:#000;color:#fff;font-style:normal;font-size:19.8px;line-height:1}
 .lbl{color:var(--muted);font-size:14.3px;padding:16px 10px 6px}
 #list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
 #list li{display:flex;align-items:center;border-radius:10px}
@@ -45,7 +45,8 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 .ci{flex:1;min-width:0;text-align:left;padding:8px 10px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .del{color:var(--muted);padding:6px 10px;border-radius:8px;opacity:.7}
 .del:hover{color:var(--err);opacity:1}
-.foot{display:block;width:100%;text-align:left;padding:10px;border-radius:10px;margin-top:8px}
+.foot{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px;border-radius:10px;margin-top:8px}
+ .foot-icon{display:inline-grid;place-items:center;width:26px;height:26px;flex:0 0 26px;color:#fff;font-size:18px;line-height:1}
 .none{color:var(--muted);font-size:15.4px;padding:6px 10px}
 #scrim{display:none}
 
@@ -247,11 +248,10 @@ input, textarea{font-size:17.6px!important}
 
 <aside id="side" aria-label="Menu">
   <div class="brand" id="brand"><span class="brand-name">EdhyX</span></div>
-  <button class="newbtn" id="newBtn" type="button"><i>+</i> Chat baru</button>
-  <button class="clear-history" id="clearHistoryBtn" type="button">Hapus riwayat chat</button>
-  <div class="lbl">Riwayat</div>
+  <button class="newbtn" id="newBtn" type="button"><i>+</i> Obrolan Baru</button>
+  <button class="clear-history" id="clearHistoryBtn" type="button"><i>−</i> Hapus Riwayat Chat</button>
   <ul id="list"></ul>
-  <button class="foot" id="settingsBtn" type="button">Pengaturan</button>
+  <button class="foot" id="settingsBtn" type="button"><span class="foot-icon" aria-hidden="true">⚙</span> Pengaturan</button>
 </aside>
 <div id="scrim"></div>
 
