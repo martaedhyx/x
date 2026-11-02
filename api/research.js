@@ -54,7 +54,7 @@ function isAggregatorUrl(value) {
 
 function isDirectArticle(item) {
   const url = safeUrl(item && item.url);
-  if (!url) return false;
+  if (!url || isAggregatorUrl(url)) return false;
   try {
     const u = new URL(url);
     const path = u.pathname.toLowerCase().replace(/\/+$/, "") || "/";
