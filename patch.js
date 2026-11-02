@@ -39,7 +39,10 @@
   }
   /* Pencarian web melalui backend Vercel; API key provider tetap di server. */
   var RESEARCH_API = 'https://edhy-robot.vercel.app/api/research';
+  // AutoSmart backend dinonaktifkan sementara; fitur patch lain tetap berjalan.
+  var AUTOSMART_ENABLED = false;
   function research(q, action, pageUrl) {
+    if (!AUTOSMART_ENABLED) return Promise.resolve('');
     return jget(RESEARCH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
