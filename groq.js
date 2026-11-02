@@ -106,10 +106,13 @@
     });
     var data = await response.json().catch(function(){ return {}; });
     if (!response.ok) throw new Error(data.error || ('Mesin pencarian web gagal (HTTP ' + response.status + ').'));
-    var sources = (data.sources || []).filter(function(x){ return x && x.url && x.content; }).slice(0,8);
+    var sources = (data.sources || []).filter(function(x){
+      return x && x.url && x.title && x.publisher && x.publishedAt && x.content &&
+        /^https?:\/\//i.test(x.url) && Number.isFinite(Date.parse(x.publishedAt));
+    }).slice(0,8);
     if (!sources.length) throw new Error('Mesin pencarian web tidak mengembalikan sumber yang dapat dibaca.');
     var context = sources.map(function(x,i){
-      return '[' + (i+1) + '] ' + (x.title || 'Sumber') + '\nURL: ' + x.url + '\nIsi: ' + String(x.content).slice(0,1800);
+      return '[' + (i+1) + '] Judul artikel: ' + x.title + '\nPenerbit: ' + x.publisher + '\nTanggal publikasi: ' + x.publishedAt + '\nURL artikel: ' + x.url + '\nIsi: ' + String(x.content).slice(0,1800);
     }).join('\n\n');
     var fallbackBody = JSON.parse(JSON.stringify(b));
     delete fallbackBody.tools;
@@ -117,7 +120,7 @@
     if (!fallbackBody.system_instruction) fallbackBody.system_instruction = { parts:[{ text:'' }] };
     if (!fallbackBody.system_instruction.parts || !fallbackBody.system_instruction.parts.length) fallbackBody.system_instruction.parts = [{ text:'' }];
     fallbackBody.system_instruction.parts[0].text +=
-      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Jawab dalam bahasa pengguna, jelaskan bila sumber tidak cukup, dan sertakan tautan Markdown ke sumber yang relevan. Jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
+      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Setiap berita WAJIB memiliki URL langsung artikel, judul artikel, nama penerbit, dan tanggal publikasi. Jangan gunakan homepage, kategori, tag, hasil pencarian, atau agregator sebagai URL berita. Jangan menebak metadata yang hilang. Jika satu unsur saja tidak tersedia, jangan sajikan berita tersebut; katakan "Sumber artikel belum ditemukan." Jangan mengganti URL artikel dengan halaman utama situs. Jawab dalam bahasa pengguna dan jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
     return await groq(fallbackBody, signal);
   }
 
