@@ -34,6 +34,7 @@ async function request(url, options = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error("Provider HTTP " + response.status);
+  if (data && data.success === false) throw new Error(data.error || "Provider melaporkan kegagalan.");
   return data;
 }
 
@@ -44,9 +45,9 @@ const AGGREGATOR_HOSTS = new Set([
 
 function isAggregatorUrl(value) {
   try {
-    const host = new URL(value).hostname.toLowerCase().replace(/^www\\./, "");
+    const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
     return AGGREGATOR_HOSTS.has(host) ||
-      /(^|\\.)(originbrief|thekush|crystal-method)\\./i.test(host);
+      /(^|\.)(originbrief|thekush|crystal-method)\./i.test(host);
   } catch {
     return true;
   }
@@ -71,9 +72,9 @@ function isDirectArticle(item) {
     if (parts.length === 1 && /^(berita|news|ai|technology|teknologi|artikel|latest|terbaru|home|index)$/i.test(last)) return false;
     const title = clean(item.title || item.name, 300);
     const content = clean(item.content || item.description || item.snippet || item.text ||
-      (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800);
-    if (title.length < 9 || content.replace(/\s+/g, " ").trim().length < 60) return false;
-    if (!clean(item.publisher, 160) || !clean(item.publishedAt, 80) || !Number.isFinite(Date.parse(item.publishedAt))) return false;
+      (Array.isArray(item.highlights) ? item.highlights.join(" ") : "") ||
+      (Array.isArray(item.extra_snippets) ? item.extra_snippets.join(" ") : ""), 1800);
+    if (title.length < 6 || content.replace(/\s+/g, " ").trim().length < 35) return false;
     if (/^(home|homepage|beranda|latest news|ai news|berita terbaru|search results?)$/i.test(title)) return false;
     return true;
   } catch {
@@ -84,12 +85,13 @@ function isDirectArticle(item) {
 function source(provider, item) {
   const url = clean(item.url || item.link, MAX_URL);
   if (!/^https?:\/\//i.test(url)) return null;
-  let publisher = clean(item.publisher || item.source_name || item.site_name || item.domain, 160);
+  let publisher = clean(item.publisher || item.source_name || item.site_name || item.domain ||
+    (item.profile && (item.profile.long_name || item.profile.name)), 160);
   if (!publisher) {
     try { publisher = new URL(url).hostname.replace(/^www\./i, ""); } catch {}
   }
   const rawDate = item.published_date || item.publishedDate || item.published_at ||
-    item.publishedAt || item.datePublished || item.date || "";
+    item.publishedAt || item.datePublished || item.date || item.page_age || "";
   const parsedDate = rawDate ? Date.parse(rawDate) : NaN;
   const publishedAt = Number.isFinite(parsedDate) && parsedDate > 0 && parsedDate <= Date.now() + 86400000
     ? new Date(parsedDate).toISOString() : "";
@@ -184,12 +186,14 @@ async function firecrawlRead(url) {
     body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true })
   });
   const d = data.data || data;
+  const content = clean(d.markdown || d.content || "", 12000);
+  if (!content) throw new Error("Firecrawl tidak mengembalikan isi halaman.");
   return {
     provider: "Firecrawl",
     title: clean((d.metadata || {}).title || url, 300),
     url: clean((d.metadata || {}).sourceURL || url, MAX_URL),
     image: safeUrl((d.metadata || {}).ogImage || (d.metadata || {}).image || ""),
-    content: clean(d.markdown || d.content || "", 12000)
+    content
   };
 }
 
@@ -239,27 +243,28 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Pasang minimal satu dari BRAVE_API_KEY, TAVILY_API_KEY, atau EXA_API_KEY di Vercel.", configured });
   }
 
-  // Jalankan semua provider serentak, tetapi gunakan provider pertama yang
-  // mengembalikan artikel valid. Jangan menunggu provider yang lebih lambat.
+  // Jalankan semua mesin pencari paralel, lalu gabungkan hasil valid dari
+  // setiap provider yang berhasil. Satu provider gagal tidak menggagalkan yang lain.
   const providerJobs = [
     ["Tavily", tavilySearch(query)],
     ["Brave", braveSearch(query)],
     ["Exa", exaSearch(query)]
-  ].map(([name, job]) => Promise.resolve(job).then(items => {
-    const valid = (items || []).filter(isDirectArticle);
-    if (!valid.length) throw new Error(name + ": tidak ada artikel valid");
-    return { provider: name, items: valid };
-  }).catch(error => {
-    throw new Error(name + ": " + (error && error.message ? error.message : "gagal"));
-  }));
+  ].map(async ([name, job]) => {
+    try {
+      const items = await job;
+      const valid = (items || []).filter(isDirectArticle);
+      if (!valid.length) throw new Error("tidak ada artikel valid");
+      return { provider: name, items: valid };
+    } catch (error) {
+      return { provider: name, items: [], error: name + ": " +
+        (error && error.message ? error.message : "gagal") };
+    }
+  });
 
-  let winner;
-  try {
-    winner = await Promise.any(providerJobs);
-  } catch (aggregate) {
-    const failures = aggregate && aggregate.errors
-      ? aggregate.errors.map(error => String(error.message || error))
-      : ["Semua provider gagal atau tidak mengembalikan artikel valid."];
+  const outcomes = await Promise.all(providerJobs);
+  const successful = outcomes.filter(x => x.items.length);
+  const failures = outcomes.filter(x => x.error).map(x => x.error);
+  if (!successful.length) {
     return res.status(502).json({
       error: "Tidak ada hasil pencarian yang berhasil diperoleh.",
       configured,
@@ -269,25 +274,30 @@ export default async function handler(req, res) {
 
   const unique = [];
   const seen = new Set();
-  for (const item of winner.items) {
-    const parsed = new URL(item.url);
-    parsed.hash = "";
-    parsed.search = "";
-    const key = parsed.toString().toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(item);
+  for (const outcome of successful) {
+    for (const item of outcome.items) {
+      try {
+        const parsed = new URL(item.url);
+        parsed.hash = "";
+        parsed.search = "";
+        const key = parsed.toString().toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(item);
+        }
+      } catch {}
     }
   }
 
-  // Kirim hasil pencarian lebih dahulu. Pengambilan favicon/thumbnail
-  // dilakukan terpisah oleh action metadata agar tidak menahan jawaban.
+  // Hasil digabung dari semua provider yang merespons; metadata visual tetap
+  // dimuat terpisah agar tidak memperlambat jawaban.
   return res.status(200).json({
     action,
     query,
-    sources: unique.slice(0, 8),
-    selectedProvider: winner.provider,
+    sources: unique.slice(0, MAX_SOURCES),
+    selectedProvider: successful.map(x => x.provider),
+    failedProviders: failures,
     configured,
-    retrievalMode: "fastest-valid"
+    retrievalMode: "multi-source"
   });
 }
