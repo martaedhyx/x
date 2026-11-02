@@ -32,17 +32,9 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 /* Sidebar */
 #side{width:288px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;
   padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:30}
-.brand{display:block;padding:3px 4px 7px}
-.edhy-terminal{width:100%;max-width:124px;height:34px;overflow:hidden;border:1px solid #fff;border-radius:5px;background:#050505;box-shadow:0 0 5px rgba(255,255,255,.12),inset 0 0 6px rgba(255,255,255,.035);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;font-size:7px!important}
-.edhy-terminal-head{height:11px;display:flex;align-items:center;gap:3px;padding:0 4px;border-bottom:1px solid #777;background:#090909;color:#fff;font:7px/1 ui-monospace,monospace!important;font-size:7px!important;letter-spacing:.04em}
-.edhy-terminal-dot{width:4px;height:4px;border-radius:50%;display:inline-block;flex:0 0 4px}
-.edhy-terminal-head .term-name{margin-left:2px;white-space:nowrap}
-.edhy-terminal-head .term-live{margin-left:auto;color:#fff;font-size:6px;letter-spacing:.04em}
+.brand{display:flex;align-items:center;min-height:46px;padding:3px 14px 7px}
+.brand-name{font-family:var(--sans);font-size:17px;font-weight:700;line-height:1.4;color:#fff;letter-spacing:0}
 #title{display:none!important}
-.edhy-terminal-screen{position:relative;padding:0 2px;height:22px}
-#brandCode{display:block;width:100%;height:21px}
-.edhy-terminal-foot{display:none}
-@media(prefers-reduced-motion:reduce){.edhy-terminal-foot i{animation:none;opacity:.65}}
 .newbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;font-weight:600;color:#fff;background:#000}
 .newbtn:hover,.ci:hover,.foot:hover{background:var(--hover)}
 .newbtn i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #fff;background:#000;color:#fff;font-style:normal;font-size:19.8px;line-height:1}
@@ -254,13 +246,7 @@ input, textarea{font-size:17.6px!important}
 <body>
 
 <aside id="side" aria-label="Menu">
-  <div class="brand" id="brand">
-    <div class="edhy-terminal" role="img" aria-label="Terminal EdhyX dengan karakter kode bergerak membentuk nama EdhyX">
-      <div class="edhy-terminal-head"><span class="edhy-terminal-dot" style="background:#ff6259"></span><span class="edhy-terminal-dot" style="background:#ffc14f"></span><span class="edhy-terminal-dot" style="background:#35cf79"></span><span class="term-name">EDHYX / TERMINAL</span><span class="term-live">● LIVE</span></div>
-      <div class="edhy-terminal-screen"><canvas id="brandCode" width="520" height="150" aria-hidden="true"></canvas></div>
-      <div class="edhy-terminal-foot"><span class="term-prompt">root@edhyx:~$</span><span class="term-command">(EdhyX) initialize --core</span><i></i></div>
-    </div>
-  </div>
+  <div class="brand" id="brand"><span class="brand-name">EdhyX</span></div>
   <button class="newbtn" id="newBtn" type="button"><i>+</i> Chat baru</button>
   <button class="clear-history" id="clearHistoryBtn" type="button">Hapus riwayat chat</button>
   <div class="lbl">Riwayat</div>
@@ -1244,48 +1230,6 @@ input, textarea{font-size:17.6px!important}
     save('gem_key', cfg.key); save('gem_model', cfg.model); save('gem_sys', cfg.sys); save('gem_imgmodel', cfg.imgmodel);    dlg.close(); render();
   });
 
-  (function animateBrandTerminal(){
-    var canvas = $('brandCode');
-    if (!canvas || !canvas.getContext) return;
-    var ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
-    var mask = document.createElement('canvas'); mask.width = w; mask.height = h;
-    var mctx = mask.getContext('2d');
-    mctx.clearRect(0,0,w,h);
-    mctx.fillStyle = '#fff';
-    mctx.textAlign = 'center';
-    mctx.textBaseline = 'middle';
-    mctx.font = 'bold 104px ui-monospace, Menlo, Consolas, monospace';
-    mctx.fillText('EdhyX', w/2, h/2 + 2);
-    var pixels = mctx.getImageData(0,0,w,h).data, targets = [];
-    for (var y=8; y<h-8; y+=4){
-      for (var x=8; x<w-8; x+=4){
-        if (pixels[(y*w+x)*4+3] > 100) targets.push({x:x,y:y});
-      }
-    }
-    var glyphs = '-/|_';
-    var particles = targets.map(function(p,i){
-      return {x:Math.random()*w,y:Math.random()*h,tx:p.x,ty:p.y,
-        ch:glyphs.charAt(Math.floor(Math.random()*glyphs.length)),
-        phase:Math.random()*6.28,speed:.035+Math.random()*.025,
-        color:'#ffffff'};
-    });
-    var reduced = false;
-    var frame = 0;
-    function draw(){
-      ctx.clearRect(0,0,w,h);
-      ctx.fillStyle='rgba(4,8,13,.22)';ctx.fillRect(0,0,w,h);
-      particles.forEach(function(p,i){
-        var dx=p.tx-p.x,dy=p.ty-p.y;
-        p.x+=dx*.075;p.y+=dy*.075;
-        var drift=Math.sin(frame*.035+p.phase)*1.35;
-        ctx.fillStyle=p.color;
-        ctx.font='bold 12px ui-monospace,Menlo,Consolas,monospace';
-        ctx.fillText(p.ch,p.x+drift,p.y);
-      });
-      if(!reduced){frame++;requestAnimationFrame(draw);}
-    }
-    draw();
-  })();
   render();
   setInterval(updateGreeting, 12000);
 })();
