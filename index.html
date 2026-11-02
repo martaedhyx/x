@@ -620,10 +620,11 @@ input, textarea{font-size:17.6px!important}
       /\b(cara memperbaiki|langkah perbaikan|bagian-bagian|komponen utama|lokasi wisata|resep masakan)\b/.test(a);
   }
   function sourceKey(value){
-    try{var u=new URL(value);u.hash='';u.search='';return u.origin+u.pathname.replace(/\/$/,'');}catch(e){return '';}
+    try{var u=new URL(value);u.hash='';u.search='';return (u.origin+u.pathname.replace(/\/$/,'')).toLowerCase();}catch(e){return '';}
   }
   function enrichSourceVisuals(root, sourceList, answer, question){
     var urls=[], seen=Object.create(null);
+    root.querySelectorAll('img[data-source-url]').forEach(function(img){img.onerror=function(){if(!this.dataset.fallback){this.dataset.fallback='1';try{var host=new URL(this.getAttribute('data-source-url')).hostname;this.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=32';}catch(e){this.style.display='none';}}else this.style.display='none';};});
     function addUrl(u){var k=sourceKey(u);if(k&&!seen[k]&&urls.length<8){seen[k]=true;urls.push(u);}}
     (sourceList||[]).forEach(function(z){if(z&&z.uri)addUrl(z.uri);});
     var linkRe=/!?\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/gi, match;
@@ -673,10 +674,17 @@ input, textarea{font-size:17.6px!important}
         var a = el('a','copy','Simpan gambar'); a.href = src; a.download = 'gambar-martaedhyx.png'; a.style.color = 'inherit'; d.appendChild(a);
       }
     });
-    if (m.src && m.src.length){
+    var citationSources=(m.src||[]).slice();
+    var citationRe=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, citationMatch;
+    while((citationMatch=citationRe.exec(all))){
+      if(all.charAt(citationMatch.index-1)==='!')continue;
+      var citationUrl=citationMatch[2], citationKey=sourceKey(citationUrl);
+      if(citationKey&&!citationSources.some(function(z){return sourceKey(z.uri)===citationKey;}))citationSources.push({title:citationMatch[1],uri:citationUrl});
+    }
+    if (citationSources.length){
       var sd = el('div','src'); sd.appendChild(el('span','src-heading','Sumber'));
       var seenSourceUris=Object.create(null);
-      m.src.forEach(function(z){
+      citationSources.slice(0,8).forEach(function(z){
         var a2=el('a','src-card'),host='',canonical='';
         try{
           var su=new URL(z.uri); if(!/^https?:$/.test(su.protocol)||isNonArticleSourcePath(su.pathname))return;
@@ -744,7 +752,7 @@ input, textarea{font-size:17.6px!important}
     wrap.appendChild(d);
     var current=getChat(), question='';
     if(current&&current.msgs){for(var qi=current.msgs.length-1;qi>=0;qi--){if(current.msgs[qi].role==='user'){question=userText(current.msgs[qi]);break;}}}
-    enrichSourceVisuals(d,m.src||[],all,question);
+    enrichSourceVisuals(d,citationSources,all,question);
   }
   function addErr(t){ wrap.appendChild(el('div','msg err',t)); chatEl.scrollTop = chatEl.scrollHeight; }
 
