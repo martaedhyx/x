@@ -73,6 +73,7 @@ function isDirectArticle(item) {
     const content = clean(item.content || item.description || item.snippet || item.text ||
       (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800);
     if (title.length < 9 || content.replace(/\s+/g, " ").trim().length < 60) return false;
+    if (!clean(item.publisher, 160) || !clean(item.publishedAt, 80) || !Number.isFinite(Date.parse(item.publishedAt))) return false;
     if (/^(home|homepage|beranda|latest news|ai news|berita terbaru|search results?)$/i.test(title)) return false;
     return true;
   } catch {
@@ -83,12 +84,19 @@ function isDirectArticle(item) {
 function source(provider, item) {
   const url = clean(item.url || item.link, MAX_URL);
   if (!/^https?:\/\//i.test(url)) return null;
+  let publisher = clean(item.publisher || item.source_name || item.site_name || item.domain, 160);
+  if (!publisher) {
+    try { publisher = new URL(url).hostname.replace(/^www\./i, ""); } catch {}
+  }
+  const rawDate = item.published_date || item.publishedDate || item.published_at ||
+    item.publishedAt || item.datePublished || item.date || "";
+  const parsedDate = rawDate ? Date.parse(rawDate) : NaN;
+  const publishedAt = Number.isFinite(parsedDate) && parsedDate > 0 && parsedDate <= Date.now() + 86400000
+    ? new Date(parsedDate).toISOString() : "";
   const image = safeUrl(item.image || item.thumbnail || item.image_url || item.thumbnail_url || "");
   return {
-    provider,
-    title: clean(item.title || item.name || url, 300),
-    url,
-    image,
+    provider, title: clean(item.title || item.name, 300), publisher, publishedAt,
+    url, image,
     content: clean(item.content || item.description || item.snippet || item.text ||
       (Array.isArray(item.highlights) ? item.highlights.join(" ") : ""), 1800)
   };
