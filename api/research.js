@@ -84,7 +84,6 @@ async function fetchPageImages(articleUrl) {
     const response = await fetch(articleUrl, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; EdhyXBot/1.0)", Accept: "text/html,application/xhtml+xml" },
       signal: AbortSignal.timeout(7000),
-      redirect: "error"
     });
     if (!response.ok) return { image: "", favicon: new URL("/favicon.ico", articleUrl).toString() };
     const html = (await response.text()).slice(0, 600000);
@@ -92,6 +91,9 @@ async function fetchPageImages(articleUrl) {
       const match = tag.match(new RegExp("\\b" + name + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", "i"));
       return match ? (match[1] || match[2] || match[3] || "") : "";
     };
+    const titleTag = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+    const titleMeta = (html.match(/<meta\b[^>]*>/gi) || []).find(tag => /^(og:title|twitter:title)$/i.test(readAttr(tag, "property") || readAttr(tag, "name")));
+    const pageTitle = clean((titleMeta && readAttr(titleMeta, "content")) || (titleTag && titleTag[1].replace(/<[^>]*>/g, " ").replace(/&amp;/gi, "&").trim()), 300);
     const tags = html.match(/<meta\b[^>]*>/gi) || [];
     let image = "";
     for (const tag of tags) {
@@ -114,7 +116,7 @@ async function fetchPageImages(articleUrl) {
     favicon = favicon.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
     if (favicon && !/^data:/i.test(favicon)) favicon = safeUrl(new URL(favicon, response.url || articleUrl).toString());
     if (!favicon) favicon = new URL("/favicon.ico", articleUrl).toString();
-    return { image, favicon };
+    return { image, favicon, title: pageTitle };
   } catch {
     try { return { image: "", favicon: new URL("/favicon.ico", articleUrl).toString() }; }
     catch { return { image: "", favicon: "" }; }
@@ -193,7 +195,7 @@ export default async function handler(req, res) {
     if (!urls.length) return res.status(400).json({ error: "Daftar URL sumber tidak valid." });
     const metadata = await Promise.all(urls.map(async pageUrl => {
       const visual = await fetchPageImages(pageUrl);
-      return { url: pageUrl, title: "", image: visual.image, favicon: visual.favicon };
+      return { url: pageUrl, title: visual.title || "", image: visual.image, favicon: visual.favicon };
     }));
     return res.status(200).json({ action, metadata });
   }
