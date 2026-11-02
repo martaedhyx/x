@@ -37,6 +37,21 @@ async function request(url, options = {}) {
   return data;
 }
 
+const AGGREGATOR_HOSTS = new Set([
+  "thekush.codes", "originbrief.app", "news.pynoai.com",
+  "crystal-method.com", "aiweekly.my"
+]);
+
+function isAggregatorUrl(value) {
+  try {
+    const host = new URL(value).hostname.toLowerCase().replace(/^www\\./, "");
+    return AGGREGATOR_HOSTS.has(host) ||
+      /(^|\\.)(originbrief|thekush|crystal-method)\\./i.test(host);
+  } catch {
+    return true;
+  }
+}
+
 function isDirectArticle(item) {
   const url = safeUrl(item && item.url);
   if (!url) return false;
