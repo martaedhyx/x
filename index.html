@@ -232,6 +232,12 @@ input, textarea{font-size:17.6px!important}
 /* Semua teks indikator proses dibuat kecil dan seragam; hanya area status saat menunggu */
 .msg.bot.typing,.msg.bot.typing *{font-size:15.4px!important;line-height:1.35!important;font-style:italic!important}
 .msg.bot.typing .logo{font-size:initial!important}
+
+/* Animasi redup-terang hanya pada tulisan status; robot dan efek mata tetap stabil */
+@media (prefers-reduced-motion: no-preference){
+  .msg.bot.typing{animation:none!important;opacity:1!important}
+  .msg.bot.typing > span{animation:pulse 1.5s ease-in-out infinite}
+}
 </style>
 </head>
 <body>
