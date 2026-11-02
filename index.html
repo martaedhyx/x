@@ -81,7 +81,7 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 .msg.bot .edhychart-wrap canvas{max-width:100%}
 .msg.bot .chart-error{border-color:#ef4444;color:#fca5a5}
 
-.msg.bot h2,.msg.bot h3,.msg.bot h4{font-family:var(--serif);margin:1em 0 .4em;line-height:1.3}
+.msg.bot h2,.msg.bot h3,.msg.bot h4{font-family:var(--serif);margin:1em 0 .4em;line-height:1.3;color:#8ecbff;font-weight:750}
 .msg.bot h2{font-size:1.3em}.msg.bot h3{font-size:1.15em}.msg.bot h4{font-size:1.05em}
 .msg.bot ul,.msg.bot ol{margin:0 0 .8em;padding-left:1.4em}
 .msg.bot li{margin:.2em 0}
@@ -131,7 +131,9 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;height:1
 .list-source{margin:6px 0 2px;padding:6px 9px;border-left:2px solid var(--line);font-size:.88em;color:var(--muted)}
 .list-source .md-link{display:inline-flex;align-items:center;gap:6px;overflow-wrap:anywhere}
 .list-source .site-icon{width:16px;height:16px;object-fit:contain;vertical-align:middle}
-.src .src-thumb{width:26px;height:26px;flex:0 0 26px;object-fit:contain;border-radius:6px}
+.src .src-thumb{width:16px;height:16px;flex:0 0 16px;object-fit:contain;border-radius:4px;background:#fff}
+.src .src-preview-thumb{width:52px;height:38px;flex:0 0 52px;object-fit:cover;border-radius:6px;background:#171717}
+.msg.bot .md-link .site-icon{width:14px;height:14px;flex:0 0 14px}
 .src .src-meta{display:flex;flex-direction:column;min-width:0}
 .src .src-meta strong{font-size:12.5px;font-weight:600;overflow-wrap:anywhere}
 .src .src-meta small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
@@ -500,7 +502,7 @@ input, textarea{font-size:17.6px!important}
       var host=''; try{host=new URL(rawUrl).hostname;}catch(e){}
       var sourcePath=''; try{sourcePath=new URL(rawUrl).pathname.toLowerCase();}catch(e){}
       if(isNonArticleSourcePath(sourcePath)){var blockedLabel=String(label).replace(/^(image|favicon)\\s*/i,'').trim();if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(blockedLabel))blockedLabel=host;return '<span>'+blockedLabel+' — halaman rangkuman/arsip, bukan artikel langsung</span>';}
-      var ico=host?'<img class="site-icon" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=32" alt="" onerror="this.style.display=\'none\'">':'';
+      var ico=host?'<img class="site-icon" data-source-url="'+rawUrl.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'" src="'+(new URL('/',rawUrl).origin+'/favicon.ico')+'" alt="Ikon '+host.replace(/"/g,'')+'" loading="lazy" decoding="async">':'';
       label=String(label).replace(/^(image|favicon)\s*/i,'').trim() || host;
       if(/^(baca selengkapnya|selengkapnya|read more|more)$/i.test(label)) label=host;
       // escape " dan ' agar tidak bisa break-out dari atribut href
@@ -611,6 +613,45 @@ input, textarea{font-size:17.6px!important}
     var t = userText(m); if (t) d.appendChild(el('div','',t));
     wrap.appendChild(d);
   }
+  var SOURCE_META_API = 'https://xbot-gamma-hazel.vercel.app/api/research';
+  function visualTopic(question, answer){
+    var q=String(question||'').toLowerCase(), a=String(answer||'').toLowerCase();
+    return /\b(mesin|komponen|onderdil|perbaikan|memperbaiki|cara kerja|langkah|tutorial|pasang|instalasi|rangka|alat|perangkat|produk|kamera|ponsel|laptop|kendaraan|mobil|motor|tanaman|hewan|resep|masakan|makanan|wisata|tempat|bangunan|arsitektur|desain|pakaian|fashion|anatomi|peta|diagram|contoh visual)\b/.test(q) ||
+      /\b(cara memperbaiki|langkah perbaikan|bagian-bagian|komponen utama|lokasi wisata|resep masakan)\b/.test(a);
+  }
+  function sourceKey(value){
+    try{var u=new URL(value);u.hash='';u.search='';return u.origin+u.pathname.replace(/\/$/,'');}catch(e){return '';}
+  }
+  function enrichSourceVisuals(root, sourceList, answer, question){
+    var urls=[], seen=Object.create(null);
+    function addUrl(u){var k=sourceKey(u);if(k&&!seen[k]&&urls.length<8){seen[k]=true;urls.push(u);}}
+    (sourceList||[]).forEach(function(z){if(z&&z.uri)addUrl(z.uri);});
+    var linkRe=/!?\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/gi, match;
+    while((match=linkRe.exec(answer||''))&&urls.length<8)addUrl(match[1]);
+    if(!urls.length)return;
+    window.fetch(SOURCE_META_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'metadata',urls:urls})})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(data){
+        if(!data||!Array.isArray(data.metadata))return;
+        var visual=visualTopic(question,answer), shown=0;
+        data.metadata.forEach(function(meta){
+          var key=sourceKey(meta.url);if(!key)return;
+          var iconUrl=meta.favicon||'';
+          root.querySelectorAll('img[data-source-url]').forEach(function(img){
+            if(sourceKey(img.getAttribute('data-source-url'))!==key)return;
+            if(iconUrl){img.onerror=function(){if(!this.dataset.fallback){this.dataset.fallback='1';var h=new URL(meta.url).hostname;this.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(h)+'&sz=32';}else this.style.display='none';};img.src=iconUrl;}
+          });
+          if(visual&&meta.image&&shown<2){
+            var card=root.querySelector('.src-card[data-source-key="'+key.replace(/"/g,'')+'"]');
+            if(card&&!card.querySelector('.src-preview-thumb')){
+              var thumb=el('img','src-preview-thumb');thumb.src=meta.image;thumb.alt='Gambar terkait: '+(meta.title||'');thumb.loading='lazy';thumb.decoding='async';
+              thumb.onerror=function(){this.remove();};card.appendChild(thumb);shown++;
+            }
+          }
+        });
+      }).catch(function(){});
+  }
+
   function addBot(m, typewrite){
     var d = el('div','msg bot'), all = '';
     m.parts.forEach(function(p){
@@ -642,11 +683,10 @@ input, textarea{font-size:17.6px!important}
           su.hash=''; su.search=''; canonical=su.href.replace(/\/$/,'').toLowerCase();
         }catch(e){return;}
         if(seenSourceUris[canonical])return; seenSourceUris[canonical]=true;
-        a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer';
+        a2.href=z.uri; a2.target='_blank'; a2.rel='noopener noreferrer'; a2.setAttribute('data-source-key',canonical);
         host=(new URL(z.uri)).hostname.replace(/^www\./,'');
         if(host){
-          var ico=el('img','src-thumb'); ico.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
-          ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.onerror=function(){this.style.display='none';}; a2.appendChild(ico);
+          var ico=el('img','src-thumb'); ico.src=new URL('/favicon.ico',z.uri).href; ico.alt=''; ico.loading='lazy'; ico.decoding='async'; ico.setAttribute('data-source-url',z.uri); a2.appendChild(ico);
         }
         var sourceTitle=String(z.title||host||'Situs sumber').replace(/^(image|favicon)\s*/i,'').trim() || host || 'Situs sumber';
         var meta=el('span','src-meta'); meta.appendChild(el('strong','',sourceTitle));
@@ -702,6 +742,9 @@ input, textarea{font-size:17.6px!important}
       d.appendChild(share);
     }
     wrap.appendChild(d);
+    var current=getChat(), question='';
+    if(current&&current.msgs){for(var qi=current.msgs.length-1;qi>=0;qi--){if(current.msgs[qi].role==='user'){question=userText(current.msgs[qi]);break;}}}
+    enrichSourceVisuals(d,m.src||[],all,question);
   }
   function addErr(t){ wrap.appendChild(el('div','msg err',t)); chatEl.scrollTop = chatEl.scrollHeight; }
 
@@ -1027,7 +1070,7 @@ input, textarea{font-size:17.6px!important}
       }
 
       var model = asImage ? cfg.imgmodel : cfg.model;
-      var styleGuide = '\n\nFormat warna teks: bila membantu memperjelas jawaban, kamu boleh memberi warna pada kata atau frasa menggunakan penanda [[color=#RRGGBB]]teks berwarna[[/color]]. Gunakan hanya kode warna HEX enam digit. Pilih warna yang kontras dan mudah dibaca; gunakan seperlunya untuk judul pendek, istilah penting, nama teknologi, atau status. Jangan warnai seluruh paragraf, jangan gunakan terlalu banyak warna, dan jangan gunakan penanda ini di dalam blok kode. Untuk teks biasa, tetap gunakan format Markdown biasa.\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
+      var styleGuide = '\n\nTAMPILAN JAWABAN EDHYX: Susun jawaban dengan Markdown yang benar dan alami. Gunakan judul/subjudul untuk bagian penting, daftar untuk poin, nomor untuk urutan langkah, tabel hanya jika benar-benar membantu perbandingan, serta blok kode untuk kode. Judul harus singkat dan isi tetap normal; jangan warnai seluruh paragraf. Gunakan emoji/ikon kecil hanya bila membantu mengenali kategori atau langkah, jangan menghias setiap baris. Untuk topik visual atau praktik (misalnya perbaikan mesin, komponen, perangkat, produk, tempat, hewan, tanaman, resep, atau langkah teknis), jelaskan dengan urutan yang jelas dan sertakan gambar hanya jika benar-benar relevan dan tersedia dari sumber tepercaya. Jangan mengarang URL gambar atau mengaku gambar berasal dari sumber tertentu. Untuk sumber, gunakan tautan Markdown dengan judul sumber yang spesifik dan URL asli; jangan menulis URL favicon atau thumbnail sebagai sumber. Hindari gambar untuk jawaban abstrak atau sederhana.\n\nFormat warna teks: bila membantu memperjelas jawaban, kamu boleh memberi warna pada kata atau frasa menggunakan penanda [[color=#RRGGBB]]teks berwarna[[/color]]. Gunakan hanya kode warna HEX enam digit. Pilih warna yang kontras dan mudah dibaca; gunakan seperlunya untuk judul pendek, istilah penting, nama teknologi, atau status. Jangan warnai seluruh paragraf, jangan gunakan terlalu banyak warna, dan jangan gunakan penanda ini di dalam blok kode. Untuk teks biasa, tetap gunakan format Markdown biasa.\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.';
       var sysText = cfg.sys + styleGuide + (locOn && loc ? '\nLokasi GPS pengguna saat ini: ' + loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5) + ' (akurasi sekitar ' + loc.acc + ' m). Pakai ini bila pertanyaan menyangkut tempat atau jarak.' : '');
       var body = asImage
         ? { contents:[{ role:'user', parts:parts }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } }
