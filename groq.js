@@ -74,9 +74,9 @@
       var d = await r.clone().json();
       var c = d.candidates && d.candidates[0];
       var chunks = c && c.groundingMetadata && c.groundingMetadata.groundingChunks || [];
-      if (chunks.some(function(x){ var w=x.web || x.maps; return !!(w && /^https?:\\/\\//i.test(w.uri || '')); })) return true;
+      if (chunks.some(function(x){ var w=x.web || x.maps; return !!(w && /^https?:\/\//i.test(w.uri || '')); })) return true;
       var parts = c && c.content && c.content.parts || [];
-      return parts.some(function(x){ return !x.thought && /\\[[^\\]]+\\]\\(https?:\\/\\/[^)]+\\)/i.test(x.text || ''); });
+      return parts.some(function(x){ return !x.thought && /\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x.text || ''); });
     } catch(e){ return false; }
   }
 
