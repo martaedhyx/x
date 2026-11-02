@@ -665,7 +665,7 @@ input, textarea{font-size:17.6px!important}
             pos = Math.min(pos + 12, raw.length);
             s.textContent = raw.slice(0, pos);
             if (pos < raw.length) setTimeout(reveal, 16);
-            else { s.innerHTML = md(raw); enhanceMarkdown(s); focusLatestExchange(); }
+            else { s.innerHTML = md(raw); enhanceMarkdown(s); enrichSourceVisuals(d,citationSources,all,question); focusLatestExchange(); }
           })();
         } else { s.innerHTML = md(p.text); enhanceMarkdown(s); }
       }
@@ -752,7 +752,7 @@ input, textarea{font-size:17.6px!important}
     wrap.appendChild(d);
     var current=getChat(), question='';
     if(current&&current.msgs){for(var qi=current.msgs.length-1;qi>=0;qi--){if(current.msgs[qi].role==='user'){question=userText(current.msgs[qi]);break;}}}
-    enrichSourceVisuals(d,citationSources,all,question);
+    if(!typewrite)enrichSourceVisuals(d,citationSources,all,question);
   }
   function addErr(t){ wrap.appendChild(el('div','msg err',t)); chatEl.scrollTop = chatEl.scrollHeight; }
 
