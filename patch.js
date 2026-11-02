@@ -20,6 +20,37 @@
     } catch (e) { return true; }
   }
 
+  /* Format jawaban web secara kontekstual tanpa mengubah tampilan jawaban biasa. */
+  (function installWebAnswerStyle(){
+    var style=document.createElement('style');
+    style.textContent=
+      '.msg.bot.web-answer strong{font-weight:800;color:#fff!important}'+
+      '.msg.bot.web-answer p:has(>strong:only-child){font-weight:750;line-height:1.35;margin:1em 0 .45em}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n+1){color:#5eead4}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n+2){color:#fbbf24}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n+3){color:#fb7185}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n+4){color:#c4b5fd}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n+5){color:#86efac}'+
+      '.msg.bot.web-answer p:has(>strong:only-child):nth-of-type(6n){color:#7dd3fc}'+
+      '.msg.bot.web-answer p:has(>strong:only-child) strong{color:inherit!important}';
+    (document.head||document.documentElement).appendChild(style);
+    function mark(root){
+      if(!root||!root.querySelectorAll)return;
+      root.querySelectorAll('.msg.bot').forEach(function(node){
+        if(node.querySelector('.src'))node.classList.add('web-answer');
+      });
+    }
+    var observer=new MutationObserver(function(records){
+      records.forEach(function(record){
+        record.addedNodes.forEach(function(node){
+          if(node.nodeType===1){if(node.matches&&node.matches('.msg.bot'))mark(node.parentNode);else mark(node);}
+        });
+      });
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+    mark(document);
+  })();
+
   window.fetch = async function (url, opts) {
     if (typeof url !== 'string' || url.indexOf(API) < 0) return orig(url, opts);
     var model = ls('gem_model') || BACKUP;
@@ -50,6 +81,12 @@
           '\n\nEDHY VISUAL & DOCUMENT ENGINE: Pilih format visual sesuai permintaan pengguna. Jika diminta tabel biasa, tulis tabel Markdown standar dengan baris header dan pemisah |---| agar dirender sebagai tabel sungguhan. Jika diminta diagram alur atau diagram hubungan, keluarkan satu blok kode berbahasa mermaid berisi sintaks Mermaid yang valid, misalnya flowchart TD dengan node A[Langkah] dan B[Hasil]. Jika diminta grafik, keluarkan satu blok kode berbahasa edhychart yang isinya JSON valid dengan bentuk {"type":"bar|line|pie|doughnut","title":"Judul","labels":["Label 1","Label 2"],"datasets":[{"label":"Nama seri","data":[10,20]}]}. Gunakan hanya data yang tersedia; jangan mengarang angka. Jika diminta membuat file Word atau PDF, keluarkan satu blok edhydocument berisi JSON valid: {"title":"Judul dokumen","blocks":[{"type":"heading","text":"Judul bagian"},{"type":"paragraph","text":"Isi paragraf"},{"type":"bullet","text":"Poin"},{"type":"table","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jika diminta file Excel, keluarkan satu blok edhyexcel berisi JSON valid: {"title":"Nama buku kerja","sheets":[{"name":"Data","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jangan bungkus JSON dengan teks tambahan di dalam blok tersebut. Di luar blok, berikan pengantar singkat. Pastikan JSON valid, string memakai tanda kutip ganda, dan tidak ada koma tambahan. Untuk permintaan Word/PDF/Excel, hasil harus berupa struktur lengkap yang siap diunduh, bukan sekadar petunjuk.';
 
       } catch (e) {}
+      /* Instruksi format tambahan hanya aktif ketika Google Search benar-benar diminta. */
+      var webRequested = !!(body.tools && body.tools.some(function(t){return !!t.google_search;}));
+      if(webRequested && body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0]){
+        body.system_instruction.parts[0].text +=
+          '\\n\\nFORMAT HASIL PENCARIAN WEB: Susun jawaban dengan rapi dan mudah dipindai. Gunakan judul bagian hanya jika membantu, tulis judul sebagai satu baris tebal tersendiri (contoh **Ringkasan**), dan tebalkan nama, angka, atau fakta penting secukupnya. Gunakan emoji atau ikon hanya bila memperjelas kategori/status/langkah; jika tidak perlu, jangan pakai. Warna aksen diterapkan pada judul dan penanda status seperlunya, bukan seluruh paragraf. Isi paragraf tetap netral dan nyaman dibaca. Jangan membuat dekorasi berlebihan dan jangan mengarang sumber.';
+      }
       opts = withBody(opts, body);
     }
 
