@@ -185,8 +185,13 @@ dialog input,dialog textarea{width:100%;background:var(--bg);color:var(--ink);bo
 
 /* Tipografi ringkas dan seragam */
 *, *::before, *::after{font-family:var(--sans)!important;font-size:15.4px!important}
-/* Ukuran teks percakapan disamakan dengan ukuran baca ChatGPT */
-.msg.user,.msg.bot,.msg.bot h2,.msg.bot h3,.msg.bot h4{font-size:17.6px!important}
+/* Tipografi percakapan ringkas: isi chat lebih kecil dan hierarki judul tetap jelas */
+.msg.user,.msg.bot{font-size:15.4px!important;line-height:1.6!important}
+.msg.bot h2{font-size:17.4px!important;line-height:1.3!important}
+.msg.bot h3{font-size:16.2px!important;line-height:1.3!important}
+.msg.bot h4{font-size:15.4px!important;line-height:1.3!important}
+.msg.bot .md-table{font-size:13.2px!important;line-height:1.45!important;min-width:0!important}
+.msg.bot .md-table th,.msg.bot .md-table td{padding:8px 9px!important}
 /* Cegah auto-zoom Safari iPhone saat kolom teks disentuh; pinch zoom tetap aktif */
 input, textarea{font-size:17.6px!important}
 
