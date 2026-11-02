@@ -54,12 +54,10 @@
 
               pg.title + '\n' + pg.content +
 
-              '\n\nRingkas hanya berdasarkan isi halaman di atas. Jangan menambah fakta dari luar.';
+              '\n\nUtamakan isi halaman di atas sebagai sumber utama. Jangan mengarang isi yang tidak tercantum. Jika pertanyaan juga meminta informasi terbaru atau perbandingan, gunakan alat pencarian yang sudah tersedia bila memungkinkan dan bedakan informasi dari halaman dengan informasi tambahan.';
 
-            delete body.tools;
-
-            delete body.toolConfig;
-
+            /* Pertahankan tools Gemini yang sudah diminta aplikasi; pembacaan URL
+               tidak boleh mematikan Google Search atau tool lain. */
             init = Object.assign({}, init, { body: JSON.stringify(body) });
 
           }
