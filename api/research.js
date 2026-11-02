@@ -248,7 +248,7 @@ export default async function handler(req, res) {
     const parsed = new URL(item.url);
     parsed.hash = "";
     parsed.search = "";
-    const key = parsed.toString().replace(/\\/$/, "").toLowerCase();
+    const key = parsed.toString().toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
       unique.push(item);
