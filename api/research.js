@@ -182,7 +182,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Gunakan POST." });
 
   const body = req.body || {};
-  const action = body.action === "read" ? "read" : "search";
+  const action = body.action === "read" ? "read" : body.action === "metadata" ? "metadata" : "search";
   const query = clean(body.query, MAX_QUERY);
   const url = safeUrl(clean(body.url, MAX_URL));
   const configured = ["BRAVE_API_KEY", "TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
