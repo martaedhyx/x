@@ -85,7 +85,7 @@
       var webRequested = !!(body.tools && body.tools.some(function(t){return !!t.google_search;}));
       if(webRequested && body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0]){
         body.system_instruction.parts[0].text +=
-          '\\n\\nFORMAT HASIL PENCARIAN WEB: Susun jawaban dengan rapi dan mudah dipindai. Gunakan judul bagian hanya jika membantu, tulis judul sebagai satu baris tebal tersendiri (contoh **Ringkasan**), dan tebalkan nama, angka, atau fakta penting secukupnya. Gunakan emoji atau ikon hanya bila memperjelas kategori/status/langkah; jika tidak perlu, jangan pakai. Warna aksen diterapkan pada judul dan penanda status seperlunya, bukan seluruh paragraf. Isi paragraf tetap netral dan nyaman dibaca. Jangan membuat dekorasi berlebihan dan jangan mengarang sumber.';
+          '\n\nFORMAT HASIL PENCARIAN WEB: Susun jawaban dengan rapi dan mudah dipindai. Gunakan judul bagian hanya jika membantu, tulis judul sebagai satu baris tebal tersendiri (contoh **Ringkasan**), dan tebalkan nama, angka, atau fakta penting secukupnya. Gunakan emoji atau ikon hanya bila memperjelas kategori/status/langkah; jika tidak perlu, jangan pakai. Warna aksen diterapkan pada judul dan penanda status seperlunya, bukan seluruh paragraf. Isi paragraf tetap netral dan nyaman dibaca. Jangan membuat dekorasi berlebihan dan jangan mengarang sumber.';
       }
       opts = withBody(opts, body);
     }
