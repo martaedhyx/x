@@ -86,6 +86,16 @@ async function fetchPageImages(articleUrl) {
       signal: AbortSignal.timeout(7000),
       redirect: "error"
     });
+    if (!response.ok) return { image: "", favicon: new URL("/favicon.ico", articleUrl).toString() };
+    const html = (await response.text()).slice(0, 600000);
+    const readAttr = (tag, name) => {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\async function fetchPageImages(articleUrl) {
+  try {
+    const response = await fetch(articleUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EdhyXBot/1.0)", Accept: "text/html,application/xhtml+xml" },
+      signal: AbortSignal.timeout(7000),
+      redirect: "error"
+    });
     if (!response.ok) return { image: "", favicon: "" };
     const html = (await response.text()).slice(0, 600000);
     const tags = html.match(/<meta\\b[^>]*>/gi) || [];
@@ -121,6 +131,38 @@ async function fetchPageImages(articleUrl) {
       const host = new URL(articleUrl).hostname;
       return { image: "", favicon: "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(host) + "&sz=64" };
     } catch { return { image: "", favicon: "" }; }
+  }
+}
+");
+      const match = tag.match(new RegExp("\\b" + escaped + "\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))", "i"));
+      return match ? (match[1] || match[2] || match[3] || "") : "";
+    };
+    const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+    let image = "";
+    for (const tag of tags) {
+      const property = readAttr(tag, "property") || readAttr(tag, "name");
+      if (!/^(og:image|og:image:url|twitter:image|twitter:image:src)$/i.test(property)) continue;
+      image = readAttr(tag, "content");
+      if (image) break;
+    }
+    if (!image) {
+      const imageLink = (html.match(/<link\\b[^>]*>/gi) || []).find(tag => /(?:^|\\s)image_src(?:\\s|$)/i.test(readAttr(tag, "rel")));
+      if (imageLink) image = readAttr(imageLink, "href");
+    }
+    image = image.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
+    image = image && !/^data:/i.test(image) ? safeUrl(new URL(image, response.url || articleUrl).toString()) : "";
+
+    const linkTags = html.match(/<link\\b[^>]*>/gi) || [];
+    const iconTag = linkTags.find(tag => /(?:^|\\s)(?:shortcut\\s+)?icon(?:\\s|$)/i.test(readAttr(tag, "rel")) && !/apple-touch-icon/i.test(readAttr(tag, "rel"))) ||
+      linkTags.find(tag => /apple-touch-icon/i.test(readAttr(tag, "rel")));
+    let favicon = iconTag ? readAttr(iconTag, "href") : "";
+    favicon = favicon.replace(/&amp;/gi, "&").replace(/&#0*38;/gi, "&").trim();
+    if (favicon && !/^data:/i.test(favicon)) favicon = safeUrl(new URL(favicon, response.url || articleUrl).toString());
+    if (!favicon) favicon = new URL("/favicon.ico", articleUrl).toString();
+    return { image, favicon };
+  } catch {
+    try { return { image: "", favicon: new URL("/favicon.ico", articleUrl).toString() }; }
+    catch { return { image: "", favicon: "" }; }
   }
 }
 async function tavilySearch(query) {
@@ -190,6 +232,16 @@ export default async function handler(req, res) {
   const url = safeUrl(clean(body.url, MAX_URL));
   const configured = ["BRAVE_API_KEY", "TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
     .filter(name => !!process.env[name]);
+
+  if (action === "metadata") {
+    const urls = Array.isArray(body.urls) ? body.urls.map(value => safeUrl(clean(value, MAX_URL))).filter(Boolean).slice(0, 8) : [];
+    if (!urls.length) return res.status(400).json({ error: "Daftar URL sumber tidak valid." });
+    const metadata = await Promise.all(urls.map(async pageUrl => {
+      const visual = await fetchPageImages(pageUrl);
+      return { url: pageUrl, title: "", image: visual.image, favicon: visual.favicon };
+    }));
+    return res.status(200).json({ action, metadata });
+  }
 
   if (action === "read") {
     if (!url) return res.status(400).json({ error: "URL tidak valid. Gunakan alamat HTTP atau HTTPS publik." });
