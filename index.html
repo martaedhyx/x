@@ -33,14 +33,14 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 #side{width:288px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;
   padding:calc(12px + env(safe-area-inset-top,0px)) 10px calc(12px + env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:30}
 .brand{display:block;padding:6px 4px 14px}
-.edhy-terminal{width:100%;overflow:hidden;border:1px solid #343a43;border-radius:11px;background:linear-gradient(145deg,#10151d,#05070a 72%);box-shadow:0 0 12px rgba(80,170,255,.08),inset 0 0 18px rgba(255,255,255,.025);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.edhy-terminal-head{height:27px;display:flex;align-items:center;gap:6px;padding:0 9px;border-bottom:1px solid #252c35;background:#151a22;color:#aeb8c6;font:10px/1 ui-monospace,monospace;letter-spacing:.08em}
+.edhy-terminal{width:100%;overflow:hidden;border:1px solid #343a43;border-radius:11px;background:linear-gradient(145deg,#10151d,#05070a 72%);box-shadow:0 0 12px rgba(80,170,255,.08),inset 0 0 18px rgba(255,255,255,.025);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;font-size:10px!important}
+.edhy-terminal-head{height:27px;display:flex;align-items:center;gap:6px;padding:0 9px;border-bottom:1px solid #252c35;background:#151a22;color:#aeb8c6;font:10px/1 ui-monospace,monospace!important;font-size:10px!important;letter-spacing:.08em}
 .edhy-terminal-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:0 0 7px}
 .edhy-terminal-head .term-name{margin-left:4px;white-space:nowrap}
 .edhy-terminal-head .term-live{margin-left:auto;color:#63f3a3;font-size:9px;letter-spacing:.1em}
 .edhy-terminal-screen{position:relative;padding:3px 5px 0;height:82px}
 #brandCode{display:block;width:100%;height:78px}
-.edhy-terminal-foot{height:24px;display:flex;align-items:center;gap:5px;padding:0 9px;border-top:1px solid #202630;color:#7f91a6;font:10px/1 ui-monospace,monospace;white-space:nowrap}
+.edhy-terminal-foot{height:24px;display:flex;align-items:center;gap:5px;padding:0 9px;border-top:1px solid #202630;color:#7f91a6;font:10px/1 ui-monospace,monospace!important;font-size:10px!important;white-space:nowrap}
 .edhy-terminal-foot .term-prompt{color:#62e6a0}
 .edhy-terminal-foot .term-command{color:#d8e5f5}
 .edhy-terminal-foot i{display:inline-block;width:6px;height:12px;background:#65e6a5;animation:term-cursor 1s steps(2,end) infinite}
@@ -247,7 +247,6 @@ input, textarea{font-size:17.6px!important}
 /* Semua teks indikator proses dibuat kecil dan seragam; hanya area status saat menunggu */
 .msg.bot.typing,.msg.bot.typing *{font-size:15.4px!important;line-height:1.35!important;font-style:italic!important}
 .msg.bot.typing .logo{font-size:initial!important}
-
 /* Animasi redup-terang hanya pada tulisan status; robot dan efek mata tetap stabil */
 @media (prefers-reduced-motion: no-preference){
   .msg.bot.typing{animation:none!important;opacity:1!important}
@@ -266,7 +265,8 @@ input, textarea{font-size:17.6px!important}
     </div>
   </div>
   <button class="newbtn" id="newBtn" type="button"><i>+</i> Chat baru</button>
-  <button class="clear-history" id="clearHistoryBtn" type="button">Hapus riwayat chat</button>  <div class="lbl">Riwayat</div>
+  <button class="clear-history" id="clearHistoryBtn" type="button">Hapus riwayat chat</button>
+  <div class="lbl">Riwayat</div>
   <ul id="list"></ul>
   <button class="foot" id="settingsBtn" type="button">Pengaturan</button>
 </aside>
@@ -497,8 +497,7 @@ input, textarea{font-size:17.6px!important}
   /* ---------- tampilan teks ---------- */
   function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */
-  function inline(s){
+  /* FIX #2: escape quote pada URL untuk mencegah XSS via atribut href */  function inline(s){
     // Rapikan format sumber dari model: hapus escape HTML, label "image" palsu,
     // dan favicon Markdown duplikat. Ikon situs dibuat oleh renderer tautan di bawah.
     s = s.replace(/\\&amp;/g,'&amp;').replace(/\\(?=\[(?:image|favicon)\b)/gi,'').replace(/\\?&lt;img\b[\s\S]*?\/?&gt;/gi,'')
@@ -747,8 +746,7 @@ input, textarea{font-size:17.6px!important}
       like.title = m.feedback === 'like' ? 'Hapus suka' : 'Suka jawaban';
       like.setAttribute('aria-label',like.title);
       like.style.color = m.feedback === 'like' ? '#7dd3fc' : '';
-      like.addEventListener('click', function(){
-        m.feedback = m.feedback === 'like' ? '' : 'like';
+      like.addEventListener('click', function(){        m.feedback = m.feedback === 'like' ? '' : 'like';
         like.innerHTML = m.feedback === 'like' ? likeOn : likeOff;
         like.title = m.feedback === 'like' ? 'Hapus suka' : 'Suka jawaban';
         like.setAttribute('aria-label',like.title);
@@ -998,7 +996,6 @@ input, textarea{font-size:17.6px!important}
     if ((!q && !pending.length) || busy) return;
     if (!cfg.key){ openSettings(); return; }
     if (imageMode && !q){ addErr('Tulis dulu gambar apa yang mau dibuat.'); return; }
-
     busy = true; activeRequest = new AbortController(); setSendState(true);
     var files = pending, asImage = imageMode;
     var useWeb = !asImage && (searchOn || shouldSearchWeb(q));
@@ -1247,8 +1244,7 @@ input, textarea{font-size:17.6px!important}
     cfg.model = $('model').value.trim() || DEFAULTS.model;
     cfg.imgmodel = $('imgmodel').value.trim() || 'gemini-3.1-flash-image';
     cfg.sys = $('sys').value.trim() || DEFAULTS.sys;
-    save('gem_key', cfg.key); save('gem_model', cfg.model); save('gem_sys', cfg.sys); save('gem_imgmodel', cfg.imgmodel);
-    dlg.close(); render();
+    save('gem_key', cfg.key); save('gem_model', cfg.model); save('gem_sys', cfg.sys); save('gem_imgmodel', cfg.imgmodel);    dlg.close(); render();
   });
 
   (function animateBrandTerminal(){
