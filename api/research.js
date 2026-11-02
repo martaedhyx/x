@@ -214,39 +214,55 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Pasang minimal satu dari BRAVE_API_KEY, TAVILY_API_KEY, atau EXA_API_KEY di Vercel.", configured });
   }
 
-  const jobs = await Promise.allSettled([tavilySearch(query), braveSearch(query), exaSearch(query)]);
-  const sources = [];
-  const errors = [];
-  jobs.forEach((job, index) => {
-    if (job.status === "fulfilled") sources.push(...job.value);
-    else errors.push(["Tavily", "Brave", "Exa"][index]);
-  });
+  // Jalankan semua provider serentak, tetapi gunakan provider pertama yang
+  // mengembalikan artikel valid. Jangan menunggu provider yang lebih lambat.
+  const providerJobs = [
+    ["Tavily", tavilySearch(query)],
+    ["Brave", braveSearch(query)],
+    ["Exa", exaSearch(query)]
+  ].map(([name, job]) => Promise.resolve(job).then(items => {
+    const valid = (items || []).filter(isDirectArticle);
+    if (!valid.length) throw new Error(name + ": tidak ada artikel valid");
+    return { provider: name, items: valid };
+  }).catch(error => {
+    throw new Error(name + ": " + (error && error.message ? error.message : "gagal"));
+  }));
+
+  let winner;
+  try {
+    winner = await Promise.any(providerJobs);
+  } catch (aggregate) {
+    const failures = aggregate && aggregate.errors
+      ? aggregate.errors.map(error => String(error.message || error))
+      : ["Semua provider gagal atau tidak mengembalikan artikel valid."];
+    return res.status(502).json({
+      error: "Tidak ada hasil pencarian yang berhasil diperoleh.",
+      configured,
+      failedProviders: failures
+    });
+  }
 
   const unique = [];
   const seen = new Set();
-  for (const item of sources) {
-    if (!isDirectArticle(item)) continue;
-    const parsed = new URL(item.url); parsed.hash = ""; parsed.search = "";
-    const key = parsed.toString().replace(/\/$/, "").toLowerCase();
-    if (!seen.has(key)) { seen.add(key); unique.push(item); }
+  for (const item of winner.items) {
+    const parsed = new URL(item.url);
+    parsed.hash = "";
+    parsed.search = "";
+    const key = parsed.toString().replace(/\\/$/, "").toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
   }
-  if (!unique.length) {
-    return res.status(502).json({ error: "Tidak ada hasil pencarian yang berhasil diperoleh.", configured, failedProviders: errors });
-  }
-  const selected = unique.slice(0, MAX_SOURCES);
-  const enriched = await Promise.all(selected.map(async item => {
-    const meta = await fetchPageImages(item.url);
-    return {
-      ...item,
-      image: item.image || meta.image,
-      favicon: item.favicon || meta.favicon
-    };
-  }));
+
+  // Kirim hasil pencarian lebih dahulu. Pengambilan favicon/thumbnail
+  // dilakukan terpisah oleh action metadata agar tidak menahan jawaban.
   return res.status(200).json({
     action,
     query,
-    sources: enriched,
+    sources: unique.slice(0, 8),
+    selectedProvider: winner.provider,
     configured,
-    failedProviders: errors
+    retrievalMode: "fastest-valid"
   });
 }
