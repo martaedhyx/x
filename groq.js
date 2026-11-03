@@ -12,7 +12,11 @@
 
   function textOnly(b){
     if (b.generationConfig && b.generationConfig.responseModalities) return false;
-    if (b.tools && b.tools.length) return false;
+    /* Izinkan alat pencarian web resmi Gemini pada jalur riset Groq.
+       Tolak alat lain (mis. Maps) dan konten gambar agar tidak salah dialihkan. */
+    if (b.tools && b.tools.some(function(t){
+      return !t.google_search && !t.url_context;
+    })) return false;
     return (b.contents || []).every(function(m){
       return (m.parts || []).every(function(p){ return !p.inlineData; });
     });
