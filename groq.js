@@ -136,6 +136,42 @@
     var tried = false;
     var webFallbackTried = false;
 
+    /* Semua permintaan web mencoba Tavily lalu Exa terlebih dahulu.
+       Google Search hanya dipanggil jika pencarian sumber utama gagal. */
+    if (isWebRequest(b)) {
+      var primaryFailure = null;
+      if (canWebQ) {
+        try {
+          var primaryWebAnswer = await groqWebFallback(b, o.signal);
+          note('Tavily / Exa + Groq');
+          return fake(primaryWebAnswer);
+        } catch(e) {
+          if (o.signal && o.signal.aborted) throw e;
+          primaryFailure = e;
+        }
+      } else {
+        primaryFailure = new Error('Groq tidak tersedia untuk menyusun hasil Tavily/Exa.');
+      }
+
+      var googleBody = JSON.parse(JSON.stringify(b));
+      googleBody.tools = [{ google_search:{} }];
+      delete googleBody.toolConfig;
+      try {
+        var googleResponse = await patchedFetch(u, Object.assign({}, o, {
+          body: JSON.stringify(googleBody)
+        }));
+        if (await hasGeminiAnswer(googleResponse) && await hasGeminiSources(googleResponse)) {
+          note('Google Search · cadangan');
+          return googleResponse;
+        }
+        throw new Error('Google Search tidak mengembalikan sumber web.');
+      } catch(googleError) {
+        if (o.signal && o.signal.aborted) throw googleError;
+        throw new Error('Tavily dan Exa gagal; Google Search sebagai cadangan terakhir juga gagal. ' +
+          (googleError && googleError.message ? googleError.message : 'Coba lagi nanti.'));
+      }
+    }
+
     /* Mode Groq: chat teks biasa boleh memakai Groq lebih dahulu. */
     if (preferGroq){
       try { var first = await groq(b, o.signal); note('Groq'); return fake(first); }
