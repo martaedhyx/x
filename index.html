@@ -1152,7 +1152,7 @@ input, textarea{font-size:17.6px!important}
         text.value = q; pending = files; renderChips();
       } else {
         console.error('[send]', err);
-        try { fail('Tidak bisa terhubung. Periksa koneksi internet kamu.'); } catch(e){}
+        try { fail('Tidak bisa terhubung: ' + (err && err.message ? err.message : String(err))); } catch(e){}
       }
     } finally {
       // FIX: SELALU reset state, apa pun yang terjadi (sukses/gagal/abort)
