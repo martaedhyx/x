@@ -1,4 +1,8 @@
-const ORIGIN = "https://martaedhyx.github.io";
+const ALLOWED_ORIGINS = [
+  "https://martaedhyx.github.io",
+  "https://xbot-marta-edi.vercel.app",
+  "https://xbot-gamma-hazel.vercel.app"
+];
 const MAX_QUERY = 500;
 const MAX_URL = 2048;
 const TIMEOUT_MS = 12000;
@@ -199,13 +203,17 @@ async function firecrawlRead(url) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", ORIGIN);
+  const origin = req.headers.origin || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin);
+
+  if (allowed) res.setHeader("Access-Control-Allow-Origin", origin);
+
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Cache-Control", "no-store");
 
-  if (req.headers.origin && req.headers.origin !== ORIGIN) {
+  if (origin && !allowed) {
     return res.status(403).json({ error: "Origin tidak diizinkan." });
   }
   if (req.method === "OPTIONS") return res.status(204).end();
