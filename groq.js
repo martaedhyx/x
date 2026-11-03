@@ -80,7 +80,7 @@
     } catch(e){ return false; }
   }
 
-  var RESEARCH_API = 'https://xbot-76bhmyglg-marta-edi.vercel.app/api/research';
+  var RESEARCH_API = 'https://xbot-gamma-hazel.vercel.app/api/research';
 
   function isWebRequest(b){
     return !!(b.tools && b.tools.some(function(t){ return !!t.google_search; }));
