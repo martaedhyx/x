@@ -171,7 +171,7 @@
         throw new Error('Google Search tidak mengembalikan sumber web.');
       } catch(googleError) {
         if (o.signal && o.signal.aborted) throw googleError;
-        throw new Error('Tavily dan Exa gagal; Google Search sebagai cadangan terakhir juga gagal. ' +
+        throw new Error('Tavily dan Exa gagal (' + (primaryFailure && primaryFailure.message ? primaryFailure.message : 'tidak diketahui') + '); Google Search sebagai cadangan juga gagal. ' +
           (googleError && googleError.message ? googleError.message : 'Coba lagi nanti.'));
       }
     }
