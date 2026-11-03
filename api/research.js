@@ -244,61 +244,42 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Pasang minimal satu dari BRAVE_API_KEY, TAVILY_API_KEY, atau EXA_API_KEY di Vercel.", configured });
   }
 
-  // Jalankan semua mesin pencari paralel, lalu gabungkan hasil valid dari
-  // setiap provider yang berhasil. Satu provider gagal tidak menggagalkan yang lain.
-  const providerJobs = [
-    ["Tavily", tavilySearch(query)],
-    ["Brave", braveSearch(query)],
-    ["Exa", exaSearch(query)]
-  ].map(async ([name, job]) => {
+  // Urutan utama: Tavily, lalu Exa. Google Search dijalankan dari groq.js
+  // hanya jika kedua provider ini gagal.
+  const failures = [];
+  let selectedProvider = "";
+  let selectedItems = [];
+  for (const [name, search] of [["Tavily", tavilySearch], ["Exa", exaSearch]]) {
     try {
-      const items = await job;
-      const valid = (items || []).filter(isDirectArticle);
-      if (!valid.length) throw new Error("tidak ada artikel valid");
-      return { provider: name, items: valid };
+      const items = (await search(query) || []).filter(isDirectArticle);
+      if (!items.length) throw new Error("tidak ada artikel valid");
+      selectedProvider = name;
+      selectedItems = items;
+      break;
     } catch (error) {
-      return { provider: name, items: [], error: name + ": " +
-        (error && error.message ? error.message : "gagal") };
+      failures.push(name + ": " + (error && error.message ? error.message : "gagal"));
     }
-  });
-
-  const outcomes = await Promise.all(providerJobs);
-  const successful = outcomes.filter(x => x.items.length);
-  const failures = outcomes.filter(x => x.error).map(x => x.error);
-  if (!successful.length) {
+  }
+  if (!selectedItems.length) {
     return res.status(502).json({
-      error: "Tidak ada hasil pencarian yang berhasil diperoleh.",
-      configured,
-      failedProviders: failures
+      error: "Tavily dan Exa gagal atau tidak menghasilkan artikel valid. Google Search menjadi cadangan terakhir.",
+      configured, failedProviders: failures, googleFallback: true
     });
   }
-
   const unique = [];
   const seen = new Set();
-  for (const outcome of successful) {
-    for (const item of outcome.items) {
-      try {
-        const parsed = new URL(item.url);
-        parsed.hash = "";
-        parsed.search = "";
-        const key = parsed.toString().toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          unique.push(item);
-        }
-      } catch {}
-    }
+  for (const item of selectedItems) {
+    try {
+      const parsed = new URL(item.url);
+      parsed.hash = "";
+      parsed.search = "";
+      const key = parsed.toString().toLowerCase();
+      if (!seen.has(key)) { seen.add(key); unique.push(item); }
+    } catch {}
   }
-
-  // Hasil digabung dari semua provider yang merespons; metadata visual tetap
-  // dimuat terpisah agar tidak memperlambat jawaban.
   return res.status(200).json({
-    action,
-    query,
-    sources: unique.slice(0, MAX_SOURCES),
-    selectedProvider: successful.map(x => x.provider),
-    failedProviders: failures,
-    configured,
-    retrievalMode: "multi-source"
+    action, query, sources: unique.slice(0, MAX_SOURCES),
+    selectedProvider, failedProviders: failures, configured,
+    retrievalMode: "priority-fallback"
   });
 }
