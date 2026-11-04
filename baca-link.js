@@ -1,6 +1,6 @@
 (function(){
 
-  var API = 'https://xbot-gamma-hazel.vercel.app/api/research';
+  var API = 'https://xbot-marta-edi.vercel.app/api/research';
 
   var URL_RE = /https?:\/\/[^\s<>"')]+/i;
 
