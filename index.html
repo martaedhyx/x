@@ -16,18 +16,6 @@
 <title>martaedhyx</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='black'/%3E%3Ccircle cx='50' cy='50' r='40' fill='white'/%3E%3Crect x='30.5' y='31' width='9' height='28' rx='4.5'/%3E%3Crect x='60.5' y='31' width='9' height='28' rx='4.5'/%3E%3C/svg%3E">
 <style>
-/* Backend Cloudflare Worker hanya menerima teks */
-#plusBtn,
-#mImg,
-#mFile,
-#mCam,
-#mLens,
-#fileIn,
-#camIn,
-#lensIn {
-  display: none !important;
-}
-
 :root{
   --bg:#000000; --side:#000000; --panel:#0d0d0d; --ink:#ffffff; --muted:rgba(255,255,255,.62); --line:#2e2e2e;
   --accent:#ffffff; --accent-ink:#000000; --user:#1a1a1a; --code:#141414; --err:#ff6b6b; --hover:#1c1c1c;
@@ -1010,7 +998,7 @@ input, textarea{font-size:17.6px!important}
       return;
     }
     if ((!q && !pending.length) || busy) return;
-    // Tidak memerlukan API Key Gemini.
+    if (!cfg.key){ openSettings(); return; }
     if (imageMode && !q){ addErr('Tulis dulu gambar apa yang mau dibuat.'); return; }
     busy = true; activeRequest = new AbortController(); setSendState(true);
     var files = pending, asImage = imageMode;
@@ -1119,105 +1107,43 @@ input, textarea{font-size:17.6px!important}
         if (tools.length) body.tools = tools;
       }
 
-      // Riwayat lama: pesan terbaru dikirim terpisah melalui properti message.
-      var history = c.msgs.slice(0, -1).map(function(m) {
-        return {
-          role: m.role === 'model' ? 'assistant' : 'user',
-          content: (m.parts || [])
-            .filter(function(p) {
-              return typeof p.text === 'string';
-            })
-            .map(function(p) {
-              return p.text;
-            })
-            .join('\n')
-        };
-      }).filter(function(m) {
-        return m.content.trim().length > 0;
-      });
-
-      var res = await fetch('https://chat-api.8jjjjmdn2v.workers.dev', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: q,
-          history: history
-        }),
+      var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-goog-api-key': cfg.key },
+        body: JSON.stringify(body),
         signal: activeRequest.signal
       });
-
-      var data = await res.json().catch(function() {
-        return {};
-      });
-
-      // Hentikan pemrosesan jika pengguna menekan Stop.
-      if (!activeRequest || activeRequest.signal.aborted) {
+      var data = await res.json().catch(function(){ return {}; });
+      // Abaikan hasil yang datang setelah pengguna menekan Stop.
+      if (!activeRequest || activeRequest.signal.aborted){
         if (wait.parentNode) wait.parentNode.removeChild(wait);
         persist();
-        text.value = q;
-        pending = files;
-        renderChips();
+        text.value = q; pending = files; renderChips();
         return;
       }
-
-      if (!res.ok) {
-        fail(
-          data.error ||
-          data.message ||
-          'Cloudflare Worker mengalami kesalahan (' + res.status + ').'
-        );
+      if (!res.ok){
+        fail(errorText(res.status, (data.error && data.error.message) || '', useWeb));
       } else {
-        var jawabanAI = typeof data.text === 'string' && data.text.trim()
-          ? data.text
-          : 'Worker tidak mengembalikan jawaban.';
-
-        var src = Array.isArray(data.sources)
-          ? data.sources.map(function(item) {
-              if (typeof item === 'string') {
-                return { title: item, uri: item };
-              }
-              return {
-                title: item.title || item.name || item.url || item.uri || 'Sumber',
-                uri: item.url || item.uri || ''
-              };
-            }).filter(function(item) {
-              return /^https?:\/\//i.test(item.uri);
-            })
-          : [];
-
-        var keep = [{ text: jawabanAI }];
-        var images = Array.isArray(data.images) ? data.images : [];
-
-        images.forEach(function(item) {
-          var imageUrl = typeof item === 'string'
-            ? item
-            : (item && (item.url || item.src) || '');
-
-          var imageAlt = item && typeof item === 'object' && item.alt
-            ? item.alt
-            : 'Gambar dari sumber';
-
-          if (/^https?:\/\//i.test(imageUrl)) {
-            keep.push({
-              text: '![' + imageAlt.replace(/[\[\]]/g, '') + '](' + imageUrl + ')'
-            });
-          }
+        var got = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+        var keep = (got || []).filter(function(p){ return !p.thought && (p.text || p.inlineData); });
+        if (!keep.length) keep = [{ text:'Bot tidak memberi jawaban (mungkin diblokir filter keamanan). Coba ubah permintaannya.' }];
+        var src = [], gm = data.candidates && data.candidates[0] && data.candidates[0].groundingMetadata;
+        ((gm && gm.groundingChunks) || []).forEach(function(ch){
+          var w = ch.web || ch.maps;
+          if (w && /^https?:\/\//.test(w.uri || '') && src.length < 6 && !src.some(function(z){ return z.uri === w.uri; })) src.push({ title: w.title || w.uri, uri: w.uri });
         });
-
-        c.msgs.push({
-          role: 'model',
-          parts: keep,
-          src: src
-        });
-
-        Eyes.unlock();
-        Eyes.aha();
-        Eyes.pulse('write', 2600);
-
-        persist();
-        render(true);
+        var inlineSources = keep.some(function(p){ return /\[[^\]]+\]\(https?:\/\//i.test(p.text || ''); });
+        if (useWeb && !src.length && !inlineSources) {
+          var searchQueries = gm && Array.isArray(gm.webSearchQueries) ? gm.webSearchQueries : [];
+          var searchRan = searchQueries.length > 0 || !!(gm && gm.searchEntryPoint);
+          keep.push({ text: searchRan
+            ? '⚠ Google Search terdeteksi berjalan, tetapi respons tidak menyertakan tautan sumber yang dapat ditampilkan. Jawaban ini belum terverifikasi dari sumber web.'
+            : '⚠ Google Search diminta, tetapi respons tidak menunjukkan bahwa pencarian berhasil dijalankan atau mengembalikan sumber. Jawaban ini belum terverifikasi dari sumber web.'
+          });
+        }
+        c.msgs.push({ role:'model', parts:keep, src:src });
+        Eyes.unlock(); Eyes.aha(); Eyes.pulse('write', 2600);
+        persist(); render(true);
       }
     } catch(err){
       if (err && err.name === 'AbortError'){
