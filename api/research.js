@@ -245,8 +245,7 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Pasang minimal satu dari TAVILY_API_KEY atau EXA_API_KEY di Vercel.", configured });
   }
 
-  // Urutan utama: Tavily, lalu Exa. Google Search dijalankan dari groq.js
-  // hanya jika kedua provider ini gagal.
+  // Urutan pencarian: Tavily, lalu Exa.
   const failures = [];
   let selectedProvider = "";
   let selectedItems = [];
@@ -263,7 +262,7 @@ export default async function handler(req, res) {
   }
   if (!selectedItems.length) {
     return res.status(502).json({
-      error: "Tavily dan Exa gagal atau tidak menghasilkan artikel valid. Google Search menjadi cadangan terakhir.",
+      error: "Tavily dan Exa gagal atau tidak menghasilkan artikel valid.",
       configured, failedProviders: failures, googleFallback: true
     });
   }
