@@ -120,7 +120,7 @@
   }
   async function parseZip(bytes, depth) {
     await loadZip();
-    var zip = await window.JSZip.loadAsync(bytes, { checkCRC32: true });
+    var zip = await window.JSZip.loadAsync(bytes);
     var entries = [];
     Object.keys(zip.files).forEach(function (path) {
       var entry = zip.files[path];
