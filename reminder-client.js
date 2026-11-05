@@ -7,6 +7,8 @@
   var deviceIdKey = "edhyx_reminder_device_id";
   var deviceTokenKey = "edhyx_reminder_device_token";
   var oneSignalReady = false;
+  var oneSignalInstance = null;
+  var oneSignalInitPromise = null;
 
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -109,25 +111,37 @@
 
   async function setupOneSignal() {
     if (!ONESIGNAL_APP_ID) return false;
-    if (window.OneSignalDeferred && oneSignalReady) return true;
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function (OneSignal) {
-      await OneSignal.init({
-        appId: ONESIGNAL_APP_ID,
-        serviceWorkerPath: "OneSignalSDKWorker.js",
-        serviceWorkerParam: { scope: "/x/" },
-        notifyButton: { enable: false }
+    if (oneSignalInstance) return true;
+    if (oneSignalInitPromise) return oneSignalInitPromise;
+
+    oneSignalInitPromise = new Promise(function (resolve, reject) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function (OneSignal) {
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            serviceWorkerPath: "OneSignalSDKWorker.js",
+            serviceWorkerParam: { scope: "/x/" },
+            notifyButton: { enable: false }
+          });
+          oneSignalInstance = OneSignal;
+          oneSignalReady = true;
+          resolve(true);
+        } catch (error) {
+          reject(error);
+        }
       });
-      oneSignalReady = true;
+
+      if (!document.querySelector('script[data-onesignal-sdk]')) {
+        var script = document.createElement("script");
+        script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+        script.async = true;
+        script.dataset.onesignalSdk = "1";
+        script.onerror = function () { reject(new Error("SDK OneSignal gagal dimuat.")); };
+        document.head.appendChild(script);
+      }
     });
-    if (!document.querySelector('script[data-onesignal-sdk]')) {
-      var script = document.createElement("script");
-      script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-      script.async = true;
-      script.dataset.onesignalSdk = "1";
-      document.head.appendChild(script);
-    }
-    return true;
+    return oneSignalInitPromise;
   }
 
   async function enableNotifications() {
@@ -141,6 +155,7 @@
       return;
     }
     await setupOneSignal();
+    var OneSignal = oneSignalInstance;
     var button = document.getElementById("edhyxNotifyBtn");
     if (button) button.disabled = true;
     try {
@@ -167,6 +182,15 @@
   async function handleReminder(text) {
     var parsed = parseReminder(text);
     if (!parsed) return false;
+    var chat = document.getElementById("chat");
+    var root = document.querySelector("#chat .wrap") || chat;
+    if (root) {
+      var user = document.createElement("div");
+      user.className = "msg user";
+      user.textContent = String(text || "").trim();
+      root.appendChild(user);
+      if (chat) chat.scrollTop = chat.scrollHeight;
+    }
     if (parsed.error) {
       addBubble(parsed.error, true);
       return true;
@@ -199,28 +223,9 @@
 
   function install() {
     addNotificationButton();
-    var form = document.getElementById("form");
-    var input = document.querySelector("#form textarea");
-    if (form && input) {
-      form.addEventListener("submit", async function (event) {
-        var parsed = parseReminder(input.value);
-        if (!parsed) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        var q = input.value.trim();
-        input.value = "";
-        input.style.height = "auto";
-        var chat = document.getElementById("chat");
-        var root = document.querySelector("#chat .wrap") || chat;
-        var user = document.createElement("div");
-        user.className = "msg user";
-        user.textContent = q;
-        root.appendChild(user);
-        if (chat) chat.scrollTop = chat.scrollHeight;
-        await handleReminder(q);
-      }, true);
-    }
   }
+
+  window.EdhyReminders = { handle: handleReminder };
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     navigator.serviceWorker.register("./OneSignalSDKWorker.js", { scope: "/x/" }).catch(function () {});
