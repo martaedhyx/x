@@ -81,11 +81,11 @@
           '\n\nEDHY VISUAL & DOCUMENT ENGINE: Pilih format visual sesuai permintaan pengguna. Jika diminta tabel biasa, tulis tabel Markdown standar dengan baris header dan pemisah |---| agar dirender sebagai tabel sungguhan. Jika diminta diagram alur atau diagram hubungan, keluarkan satu blok kode berbahasa mermaid berisi sintaks Mermaid yang valid, misalnya flowchart TD dengan node A[Langkah] dan B[Hasil]. Jika diminta grafik, keluarkan satu blok kode berbahasa edhychart yang isinya JSON valid dengan bentuk {"type":"bar|line|pie|doughnut","title":"Judul","labels":["Label 1","Label 2"],"datasets":[{"label":"Nama seri","data":[10,20]}]}. Gunakan hanya data yang tersedia; jangan mengarang angka. Jika diminta membuat file Word atau PDF, keluarkan satu blok edhydocument berisi JSON valid: {"title":"Judul dokumen","blocks":[{"type":"heading","text":"Judul bagian"},{"type":"paragraph","text":"Isi paragraf"},{"type":"bullet","text":"Poin"},{"type":"table","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jika diminta file Excel, keluarkan satu blok edhyexcel berisi JSON valid: {"title":"Nama buku kerja","sheets":[{"name":"Data","headers":["Kolom 1","Kolom 2"],"rows":[["A","B"]]}]}. Jangan bungkus JSON dengan teks tambahan di dalam blok tersebut. Di luar blok, berikan pengantar singkat. Pastikan JSON valid, string memakai tanda kutip ganda, dan tidak ada koma tambahan. Untuk permintaan Word/PDF/Excel, hasil harus berupa struktur lengkap yang siap diunduh, bukan sekadar petunjuk.';
 
       } catch (e) {}
-      /* Instruksi format tambahan hanya aktif ketika Google Search benar-benar diminta. */
-      var webRequested = !!(body.tools && body.tools.some(function(t){return !!t.google_search;}));
+      /* Instruksi format hasil pencarian web eksternal. */
+      var webRequested = body.edhyx_web_search === true;
       if(webRequested && body.system_instruction && body.system_instruction.parts && body.system_instruction.parts[0]){
         body.system_instruction.parts[0].text +=
-          '\n\nFORMAT HASIL PENCARIAN WEB: Susun jawaban dengan rapi dan mudah dipindai. Gunakan judul bagian hanya jika membantu, tulis judul sebagai satu baris tebal tersendiri (contoh **Ringkasan**), dan tebalkan nama, angka, atau fakta penting secukupnya. Gunakan emoji atau ikon hanya bila memperjelas kategori/status/langkah; jika tidak perlu, jangan pakai. Warna aksen diterapkan pada judul dan penanda status seperlunya, bukan seluruh paragraf. Isi paragraf tetap netral dan nyaman dibaca. Jangan membuat dekorasi berlebihan dan jangan mengarang sumber.';
+          '\\n\\nFORMAT HASIL PENELUSURAN WEB: Susun jawaban dengan rapi dan mudah dipindai. Cantumkan sumber artikel yang benar-benar diberikan sistem. Jangan mengarang sumber.';
       }
       opts = withBody(opts, body);
     }
@@ -99,35 +99,11 @@
     }
     if (isImg || !body) return res;
 
-    var requiresWeb = !!(body.tools && body.tools.some(function (t) { return !!t.google_search; }));
-    /* Jika kombinasi Google Search + URL Context ditolak, ulangi dengan Google Search saja.
-       Jangan pernah menghapus alat pencarian lalu menyajikan jawaban seolah-olah sudah menelusuri web. */
-    if (!res.ok && [400, 403, 429].indexOf(res.status) >= 0 && body.tools) {
-      var retryTools = clone(body);
-      if (requiresWeb) {
-        retryTools.tools = [{ google_search: {} }];
-      } else {
-        delete retryTools.tools;
-        delete retryTools.toolConfig;
-      }
-      res = await orig(url, withBody(opts, retryTools));
-      body = retryTools;
-    }
-    if (!(await hasAnswer(res))) {
-      if (body.tools) {
-        var b1 = clone(body); b1.tools = [{ google_search: {} }]; delete b1.toolConfig;
-        res = await orig(url, withBody(opts, b1));
-        if (!(await hasAnswer(res)) && !requiresWeb) {
-          var b2 = clone(body); delete b2.tools; delete b2.toolConfig;
-          res = await orig(url, withBody(opts, b2));
-        }
-      }
-      /* Fallback model tetap menerima alat pencarian jika pertanyaan memang membutuhkan web. */
-      if (!(await hasAnswer(res)) && used !== BACKUP) {
-        var b3 = clone(body);
-        if (!requiresWeb) { delete b3.tools; delete b3.toolConfig; }
-        res = await orig(swap(url, BACKUP), withBody(opts, b3));
-      }
+    /* Fallback model generik; pertahankan tools lain yang masih dipakai,
+       misalnya Google Maps. Tidak ada retry khusus penelusuran web. */
+    if (!(await hasAnswer(res)) && used !== BACKUP) {
+      var fallbackBody = clone(body);
+      res = await orig(swap(url, BACKUP), withBody(opts, fallbackBody));
     }
     return res;
   };
