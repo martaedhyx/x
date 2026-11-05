@@ -287,7 +287,7 @@ input, textarea{font-size:17.6px!important}
         <button type="button" id="mImg">Buat gambar</button>
       </div>
       <button id="plusBtn" type="button" aria-label="Tambah lampiran">+</button>
-      <input type="file" id="fileIn" multiple style="display:none">
+      <input type="file" id="fileIn" multiple accept=".pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ods,.ppt,.pptx,.odp,.html,.htm,.css,.js,.json,.py,.php,.xml,.yaml,.yml,.sql,.md,.log,.jpg,.jpeg,.png,.webp,.zip,image/*,application/pdf" style="display:none">
       <input type="file" id="camIn" accept="image/*" capture="environment" style="display:none">
       <textarea id="text" rows="1" placeholder="Ketik pesan..." aria-label="Pesan"></textarea>
       <button id="micBtn" type="button" aria-label="Bicara">
@@ -907,6 +907,11 @@ input, textarea{font-size:17.6px!important}
       pending.push({ name:f.name, size:f.size, part:{ inlineData:{ mimeType:mime, data:url.split(',')[1] } }, preview: mime.indexOf('image/') === 0 ? url : null });
       return '';
     }
+    var advanced = window.EdhyFileReader ? await window.EdhyFileReader.read(f) : null;
+    if (advanced && advanced.handled){
+      pending.push({ name:f.name, size:f.size, part:{ text:'[Isi file: ' + f.name + ']\n' + advanced.text }, preview:null });
+      return '';
+    }
     var txt = null;
     if (ext === 'docx' && window.mammoth){
       txt = (await window.mammoth.extractRawText({ arrayBuffer: await readAs(f, 'readAsArrayBuffer') })).value;
@@ -1253,5 +1258,6 @@ input, textarea{font-size:17.6px!important}
 <script src="./visual-engine.js?v=3"></script>
 <script src="./terminal-ui.js?v=8"></script>
   <script src="./baca-link.js?v=2"></script>
+  <script src="./universal-file-reader.js?v=1"></script>
 </body>
 </html>
