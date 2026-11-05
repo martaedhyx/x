@@ -2,7 +2,11 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 
 export const config = { maxDuration: 15 };
 
-const ORIGIN = "https://martaedhyx.github.io";
+const ALLOWED_ORIGINS = [
+  "https://martaedhyx.github.io",
+  "https://xbot-marta-edi.vercel.app",
+  "https://xbot-gamma-hazel.vercel.app"
+];
 const MAX_MESSAGE = 500;
 
 function cors(req, res) {
@@ -11,8 +15,8 @@ function cors(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Cache-Control", "no-store");
-  if (origin === ORIGIN) res.setHeader("Access-Control-Allow-Origin", ORIGIN);
-  return !origin || origin === ORIGIN;
+  if (ALLOWED_ORIGINS.includes(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  return !origin || ALLOWED_ORIGINS.includes(origin);
 }
 
 function jsonError(res, status, error) {
