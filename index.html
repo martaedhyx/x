@@ -964,11 +964,12 @@ input, textarea{font-size:17.6px!important}
       var district = a.city_district || a.district || a.municipality;
       var city = a.city || a.town || a.county || a.state_district;
       var province = a.state;
-      [village, district, city, province].forEach(function(v){
-        if (v && parts.indexOf(v) < 0) parts.push(v);
-      });
+      if (village) parts.push('Desa/kelurahan/lingkungan: ' + village);
+      if (district && district !== village) parts.push('Kecamatan/wilayah: ' + district);
+      if (city && city !== district && city !== village) parts.push('Kabupaten/kota: ' + city);
+      if (province && province !== city) parts.push('Provinsi: ' + province);
       var result = {
-        name: parts.join(', ') || data.display_name || '',
+        name: parts.join('; ') || data.display_name || '',
         display: data.display_name || '',
         source: 'OpenStreetMap'
       };
