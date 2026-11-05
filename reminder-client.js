@@ -170,6 +170,7 @@
       await OneSignal.Notifications.requestPermission();
       var subscriptionId = OneSignal.User && OneSignal.User.PushSubscription && OneSignal.User.PushSubscription.id;
       if (!subscriptionId) throw new Error("Izin notifikasi belum aktif. Periksa pengaturan notifikasi perangkat.");
+      await registerDevice();
       await api("subscribe", { subscriptionId: subscriptionId });
       addBubble("Notifikasi EdhyX berhasil diaktifkan pada perangkat ini.");
     } catch (error) {
