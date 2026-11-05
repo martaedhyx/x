@@ -62,7 +62,7 @@
 
   function parseReminder(input) {
     var raw = String(input || "").trim();
-    if (!/^\\s*(?:tolong\\s+)?(?:ingatkan|ingetin|buat\\s+pengingat|remind\\s+me|buat\\s+alarm)\\b/i.test(raw)) return null;
+    if (!/^\s*(?:tolong\s+)?(?:ingatkan|ingetin|buat\s+pengingat|remind\s+me|buat\s+alarm)\b/i.test(raw)) return null;
 
     var d = new Date();
     var dateMatch = raw.match(/\b(besok|lusa|hari ini|tanggal\s+\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)\b/i);
@@ -96,7 +96,7 @@
     if (d.getTime() <= Date.now()) return { error: "Waktu itu sudah lewat. Pilih waktu yang akan datang." };
 
     var task = raw
-      .replace(/^(?:tolong\s+)?(?:ingatkan|ingetin|buat\s+pengingat|remind\s+me)\s*(?:saya|aku|gue)?\s*/i, "")
+      .replace(/^(?:tolong\s+)?(?:ingatkan|ingetin|buat\s+pengingat|remind\s+me|buat\s+alarm)\s*(?:saya|aku|gue)?\s*/i, "")
       .replace(/\b(?:hari ini|besok|lusa|tanggal\s+\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)\b/i, "")
       .replace(/\bjam\s*\d{1,2}(?:[:.]\d{2})?\s*(?:pagi|siang|sore|malam)?\b/i, "")
       .replace(/\b(?:untuk|agar|supaya)\b/i, "")
