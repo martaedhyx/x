@@ -133,9 +133,9 @@
     var total = 0, sections = [];
     for (var i = 0; i < entries.length; i++) {
       var entry = entries[i];
-      var size = Number(entry._data && entry._data.uncompressedSize || 0);
-      if (size > MAX_ZIP_ENTRY_BYTES || (size && total + size > MAX_ZIP_TOTAL_BYTES)) {
-        sections.push('## ' + entry.name + '\n[Diabaikan: ukuran hasil ekstraksi melewati batas keamanan.]');
+      var size = entry._data && Number(entry._data.uncompressedSize);
+      if (!Number.isFinite(size) || size < 0 || size > MAX_ZIP_ENTRY_BYTES || total + size > MAX_ZIP_TOTAL_BYTES) {
+        sections.push('## ' + entry.name + '\n[Diabaikan: ukuran hasil ekstraksi tidak diketahui atau melewati batas keamanan.]');
         continue;
       }
       var ext = extension(entry.name);
