@@ -255,23 +255,6 @@ input, textarea{font-size:17.6px!important}
   .msg.bot.typing{animation:none!important;opacity:1!important}
   .msg.bot.typing > span{animation:pulse 1.5s ease-in-out infinite}
 }
-
-/* Penanda nama orang dan informasi penting: warna saja, ukuran font diwariskan. */
-.msg.bot .edhy-person{font-size:inherit!important;font-family:inherit!important;font-weight:650;color:#7dd3fc!important}
-.msg.bot .edhy-person:nth-of-type(6n+2){color:#c4b5fd!important}
-.msg.bot .edhy-person:nth-of-type(6n+3){color:#5eead4!important}
-.msg.bot .edhy-person:nth-of-type(6n+4){color:#f9a8d4!important}
-.msg.bot .edhy-person:nth-of-type(6n+5){color:#fbbf24!important}
-.msg.bot .edhy-person:nth-of-type(6n){color:#86efac!important}
-.msg.bot .edhy-important{font-size:inherit!important;font-family:inherit!important;font-weight:650;color:#fbbf24!important}
-.msg.bot .edhy-important strong{color:inherit!important}
-.msg.bot .edhy-day,.msg.bot .edhy-clock{font-size:inherit!important;font-family:inherit!important;font-weight:650}
-.msg.bot .edhy-day:nth-of-type(6n+1),.msg.bot .edhy-clock:nth-of-type(6n+1){color:#7dd3fc!important}
-.msg.bot .edhy-day:nth-of-type(6n+2),.msg.bot .edhy-clock:nth-of-type(6n+2){color:#c4b5fd!important}
-.msg.bot .edhy-day:nth-of-type(6n+3),.msg.bot .edhy-clock:nth-of-type(6n+3){color:#5eead4!important}
-.msg.bot .edhy-day:nth-of-type(6n+4),.msg.bot .edhy-clock:nth-of-type(6n+4){color:#f9a8d4!important}
-.msg.bot .edhy-day:nth-of-type(6n+5),.msg.bot .edhy-clock:nth-of-type(6n+5){color:#fbbf24!important}
-.msg.bot .edhy-day:nth-of-type(6n),.msg.bot .edhy-clock:nth-of-type(6n){color:#86efac!important}
 </style>
 </head>
 <body>
@@ -541,10 +524,6 @@ input, textarea{font-size:17.6px!important}
     }).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>')
       .replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<em>$2</em>')
       .replace(/\[\[color=(#[0-9a-fA-F]{6})\]\]([\s\S]*?)\[\[\/color\]\]/g,'<span style="color:$1">$2</span>')
-      .replace(/\[\[person\]\]([\s\S]*?)\[\[\/person\]\]/gi,'<span class="edhy-person">$1</span>')
-      .replace(/\[\[important\]\]([\s\S]*?)\[\[\/important\]\]/gi,'<span class="edhy-important">$1</span>')
-      .replace(/\[\[day\]\]([\s\S]*?)\[\[\/day\]\]/gi,'<span class="edhy-day">$1</span>')
-      .replace(/\[\[clock\]\]([\s\S]*?)\[\[\/clock\]\]/gi,'<span class="edhy-clock">$1</span>')
       .replace(/Marta Edi Sutrisno/gi,'<span class="marta-name">Marta Edi Sutrisno</span>');
   }
   function isNonArticleSourcePath(path){
@@ -602,7 +581,7 @@ input, textarea{font-size:17.6px!important}
     var parts=esc(src).split(String.fromCharCode(96,96,96)),out='';
     parts.forEach(function(p,i){
       if(i%2){
-        var m=p.match(/^([\w+#.-]+)?\n/),lang=m&&m[1]?m[1].toLowerCase():'html',code=m?p.slice(m[0].length):p;
+        var m=p.match(/^(\w+)?\n/),lang=m&&m[1]?m[1].toLowerCase():'html',code=m?p.slice(m[0].length):p;
         if(lang==='mermaid')out+='<div class="mermaid-block">'+code.replace(/\n$/,'')+'</div>';
         else if(lang==='edhychart'||lang==='chart')out+='<pre class="edhychart-source"><code>'+code.replace(/\n$/,'')+'</code></pre>';
         else out+='<pre><span class="code-lang">'+lang.toUpperCase()+'</span><button type="button" class="code-copy">Salin</button><code class="language-'+lang+'">'+code.replace(/\n$/,'')+'</code></pre>';
@@ -1168,8 +1147,7 @@ input, textarea{font-size:17.6px!important}
 
       var model = asImage ? cfg.imgmodel : cfg.model;
       var styleGuide = '\n\nTAMPILAN JAWABAN EDHYX: Secara default, jawab dalam teks biasa dengan paragraf natural. JANGAN membuat format Markdown secara otomatis: jangan menambahkan judul atau subjudul, heading, daftar berpoin, penomoran, tabel, teks tebal, teks miring, atau blok kutipan hanya atas inisiatif sendiri. Gunakan format khusus hanya jika pengguna secara eksplisit memintanya atau jika format itu mutlak diperlukan (misalnya blok kode saat pengguna meminta kode). Untuk jawaban biasa, cukup tulis kalimat dan paragraf yang rapi, langsung, dan mudah dibaca. Jangan warnai seluruh paragraf. Gunakan emoji/ikon kecil hanya bila membantu mengenali kategori atau langkah, jangan menghias setiap baris. Untuk topik visual atau praktik (misalnya perbaikan mesin, komponen, perangkat, produk, tempat, hewan, tanaman, resep, atau langkah teknis), jelaskan dengan urutan yang jelas dan sertakan gambar hanya jika benar-benar relevan dan tersedia dari sumber tepercaya. Jangan mengarang URL gambar atau mengaku gambar berasal dari sumber tertentu. Untuk sumber, gunakan tautan Markdown dengan judul sumber yang spesifik dan URL asli; jangan menulis URL favicon atau thumbnail sebagai sumber. Hindari gambar untuk jawaban abstrak atau sederhana.\n\nWarna jawaban: jangan memakai biru muda untuk semua judul. Setiap judul bagian (Markdown ## atau ###) harus memakai warna berbeda secara bergantian dari palet kontras: teal #5eead4, kuning emas #fbbf24, coral #fb7185, ungu #c4b5fd, hijau #86efac, dan biru langit #7dd3fc. Gunakan judul Markdown agar warna otomatis diterapkan oleh tampilan EdhyX. Isi paragraf dan daftar tetap putih/normal agar nyaman dibaca. Bila benar-benar perlu menandai istilah penting, gunakan penanda [[color=#RRGGBB]]teks berwarna[[/color]] dengan warna yang kontras; jangan warnai seluruh paragraf, jangan gunakan terlalu banyak warna, dan jangan gunakan penanda di dalam blok kode.\n\nGaya jawaban: jawab seperti asisten analitis yang sistematis, tenang, dan langsung ke inti. Untuk pertanyaan sederhana, jawab singkat. Untuk pertanyaan kompleks, susun jawaban dengan judul atau poin bernomor bila membantu; jelaskan langkah penting, fakta, asumsi, dan kesimpulan secara ringkas. Tampilkan alasan atau ringkasan penalaran yang bisa dipahami, bukan penalaran internal tersembunyi. Gunakan bahasa pengguna, hindari pengulangan, basa-basi panjang, dan klaim yang tidak pasti.\n\nRiset dan pencarian: jika alat web tersedia dan pertanyaan membutuhkan informasi terbaru, fakta yang dapat berubah, verifikasi, atau riset, lakukan penelusuran sebelum menjawab. Pecah pertanyaan kompleks menjadi beberapa subpertanyaan atau sudut pencarian yang relevan. Gunakan hasil pencarian untuk menemukan halaman sumber, lalu baca halaman penting secara lebih mendalam bila alat konteks URL tersedia. Utamakan sumber primer/resmi dan sumber independen yang kredibel; bandingkan beberapa sumber untuk klaim penting. Perhatikan tanggal publikasi dan tanggal kejadian, bedakan fakta, perkiraan, dan opini, serta jelaskan bila sumber bertentangan atau bukti belum cukup. Sertakan tautan sumber yang benar-benar digunakan. Jangan mengarang sumber, kutipan, angka, atau kepastian. Untuk pertanyaan sederhana dan pengetahuan yang stabil, jangan memaksakan pencarian.\n\nATURAN WAJIB BERITA DAN SUMBER: Setiap berita yang disebut harus memiliki URL langsung ke halaman artikel, judul artikel spesifik, nama penerbit, dan tanggal publikasi yang tertera atau terverifikasi. Jangan gunakan URL beranda, kategori, tag, pencarian, agregator, atau portal umum sebagai pengganti artikel. Jangan menebak judul, penerbit, tanggal, atau URL. Jika satu saja dari empat unsur tidak ditemukan atau tidak dapat diverifikasi, jangan tampilkan berita itu sebagai berita terverifikasi; nyatakan: "Sumber artikel belum ditemukan." Jika tidak ada berita yang lolos, katakan sumber artikel belum ditemukan dan jangan menyusun daftar berita dari ingatan. Aturan ini berlaku untuk semua sumber pencarian web yang benar-benar digunakan.';
-      var colorGuide = '\n\nPENANDA WARNA OTOMATIS EDHYX: Saat menyebut nama orang atau tokoh, bungkus hanya nama tersebut dengan [[person]]Nama Orang[[/person]]. Gunakan penanda [[important]]teks penting[[/important]] untuk peringatan, risiko, larangan, keputusan utama, kesimpulan penting, dan informasi yang wajib diperhatikan. Jangan menandai seluruh paragraf. Jangan gunakan penanda ini di dalam blok kode, URL, atau kutipan kode. Teks yang ditandai harus tetap memiliki ukuran dan jenis font yang sama; warna saja yang berubah. Saat menyebut nama hari (Senin sampai Minggu), bungkus nama hari dengan [[day]]Senin[[/day]]. Saat menyebut jam/waktu spesifik (misalnya 08.30 WIB, pukul 14:00, atau 7 malam), bungkus hanya bagian waktunya dengan [[clock]]08.30 WIB[[/clock]]. Jangan tandai kata umum seperti 'hari ini' atau 'nanti' jika tidak menyebut nama hari/jam tertentu. Penanda hari dan jam akan diberi warna bergantian oleh tampilan, tanpa mengubah ukuran font. Untuk kode program, selalu gunakan blok kode berpagar dengan label bahasa yang tepat seperti html, css, javascript, python, php, json, sql, bash, java, c, cpp, csharp, go, rust, atau lainnya agar syntax highlighting aktif.';
-  var today = new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'full'}).format(new Date());
+      var today = new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'full'}).format(new Date());
       var locationContext = '';
       if (locOn && loc){
         locationContext = '\n\nLOKASI PERANGKAT (gunakan hanya bila relevan): koordinat GPS ' + loc.lat.toFixed(6) + ', ' + loc.lng.toFixed(6) +
@@ -1178,7 +1156,7 @@ input, textarea{font-size:17.6px!important}
             '\nNama wilayah belum berhasil diverifikasi dari peta. Jangan menebak kota, kecamatan, atau alamat; sebutkan koordinat dan nyatakan nama wilayah belum terverifikasi.') +
           '\nJika akurasi GPS lebih dari 100 meter, jelaskan bahwa titik masih perkiraan. Jangan pernah mengubah koordinat menjadi kota lain berdasarkan tebakan. Bedakan posisi GPS, nama wilayah hasil peta, dan alamat persis.';
       }
-      var sysText = cfg.sys + styleGuide + colorGuide + '\n\nTANGGAL HARI INI: ' + today + ' (WIB). Pakai ini untuk "hari ini", "minggu ini", dan "terbaru". Artikel sampai tanggal ini valid.' + (useWeb ? '\n\nPENCARIAN WEB WAJIB: Gunakan hasil pencarian Tavily atau Exa yang disediakan sistem sebagai dasar jawaban. Cantumkan tautan artikel yang benar-benar ditemukan. Jangan mengandalkan ingatan internal atau mengarang sumber.' : '') + locationContext;
+      var sysText = cfg.sys + styleGuide + '\n\nTANGGAL HARI INI: ' + today + ' (WIB). Pakai ini untuk "hari ini", "minggu ini", dan "terbaru". Artikel sampai tanggal ini valid.' + (useWeb ? '\n\nPENCARIAN WEB WAJIB: Gunakan hasil pencarian Tavily atau Exa yang disediakan sistem sebagai dasar jawaban. Cantumkan tautan artikel yang benar-benar ditemukan. Jangan mengandalkan ingatan internal atau mengarang sumber.' : '') + locationContext;
       var body = asImage
         ? { contents:[{ role:'user', parts:parts }], generationConfig:{ responseModalities:['TEXT','IMAGE'] } }
         : { system_instruction:{ parts:[{ text: sysText }] }, contents: toContents(c.msgs), generationConfig: useWeb ? { temperature:1 } : undefined };
