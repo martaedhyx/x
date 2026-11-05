@@ -163,14 +163,6 @@ async function tavilySearch(query) {
   return (data.results || []).map(x => source("Tavily", x)).filter(Boolean);
 }
 
-async function braveSearch(query) {
-  const key = process.env.BRAVE_API_KEY;
-  if (!key) return [];
-  const url = "https://api.search.brave.com/res/v1/web/search?q=" + encodeURIComponent(query) + "&count=8";
-  const data = await request(url, { headers: { "X-Subscription-Token": key } });
-  return (((data.web || {}).results) || []).map(x => source("Brave", x)).filter(Boolean);
-}
-
 async function exaSearch(query) {
   const key = process.env.EXA_API_KEY;
   if (!key) return [];
@@ -223,7 +215,7 @@ export default async function handler(req, res) {
   const action = body.action === "read" ? "read" : body.action === "metadata" ? "metadata" : "search";
   const query = clean(body.query, MAX_QUERY);
   const url = safeUrl(clean(body.url, MAX_URL));
-  const configured = ["BRAVE_API_KEY", "TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
+  const configured = ["TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
     .filter(name => !!process.env[name]);
 
   if (action === "metadata") {
@@ -249,7 +241,7 @@ export default async function handler(req, res) {
 
   if (!query) return res.status(400).json({ error: "Query pencarian wajib diisi." });
   if (!configured.some(x => x !== "FIRECRAWL_API_KEY")) {
-    return res.status(503).json({ error: "Pasang minimal satu dari BRAVE_API_KEY, TAVILY_API_KEY, atau EXA_API_KEY di Vercel.", configured });
+    return res.status(503).json({ error: "Pasang minimal satu dari TAVILY_API_KEY atau EXA_API_KEY di Vercel.", configured });
   }
 
   // Urutan utama: Tavily, lalu Exa. Google Search dijalankan dari groq.js
