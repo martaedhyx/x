@@ -56,10 +56,7 @@
   }
   function loadDoc() {
     if (!docPromise) {
-      docPromise = loadScript(
-        'https://raw.githubusercontent.com/Alpaq92/JSDoc/main/src/docToText.js',
-        function () { return typeof window.docToText === 'function'; }
-      );
+      docPromise = import('https://esm.sh/@mdgate/doc@0.6.25');
     }
     return docPromise;
   }
@@ -86,9 +83,14 @@
   async function parseBuffer(name, bytes, depth) {
     var ext = extension(name);
     if (ext === 'doc') {
-      await loadDoc();
-      var docText = window.docToText(bytes);
-      if (docText == null) throw new Error('File DOC lama ini terenkripsi, rusak, atau memakai format Word yang belum didukung.');
+      var docReader = await loadDoc();
+      if (!docReader || typeof docReader.toMarkdown !== 'function') {
+        throw new Error('Pustaka pembaca DOC lama tidak tersedia.');
+      }
+      var docText = await docReader.toMarkdown(bytes);
+      if (!docText || !String(docText).trim()) {
+        throw new Error('DOC tidak berisi teks yang dapat dibaca atau file dilindungi kata sandi.');
+      }
       return capText(docText);
     }
     if (ext === 'ppt') {
