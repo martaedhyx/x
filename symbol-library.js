@@ -145,11 +145,11 @@
     var menu=document.getElementById('menu');
     if (!menu || !document.getElementById('text')) return;
     addStyles();
-    var trigger=el('button',{type:'button',id:'mSymbols'},'▦  Perpustakaan simbol');
+    var trigger=el('button',{type:'button',id:'mSymbols'},'▦  Simbol');
     menu.appendChild(trigger);
     var dlg=el('dialog',{id:'edhySymbolDlg','aria-labelledby':'edhySymbolTitle'});
     var head=el('div',{class:'es-head'});
-    head.appendChild(el('h2',{id:'edhySymbolTitle'},'Perpustakaan Simbol EdhyX'));
+    head.appendChild(el('h2',{id:'edhySymbolTitle'},'Simbol EdhyX'));
     var close=el('button',{type:'button',class:'es-close'},'Tutup'); close.addEventListener('click',function(){dlg.close();}); head.appendChild(close);
     dlg.appendChild(head);
     var search=el('input',{type:'search',id:'edhySymbolSearch',class:'es-search',placeholder:'Cari simbol, emoji, atau nama…','aria-label':'Cari simbol'});
