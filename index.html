@@ -282,7 +282,7 @@ input, textarea{font-size:17.6px!important}
         <button type="button" id="mFile">Lampirkan file</button>
         <button type="button" id="mCam">Ambil foto</button>
         <button type="button" id="mLens">Lens: baca gambar</button>
-        <button type="button" id="mLoc">Bagikan lokasi (GPS)</button>
+        <button type="button" id="mLoc">Bagikan GPS</button>
         <button type="button" id="mWeb">Cari di web</button>
         <button type="button" id="mImg">Buat gambar</button>
       </div>
@@ -864,6 +864,7 @@ input, textarea{font-size:17.6px!important}
 
   /* ---------- lampiran ---------- */
   function renderChips(){
+    $('mLoc').textContent = 'Bagikan GPS' + (locOn ? ' •' : '');
     var box = $('chips'); box.innerHTML = '';
     if (imageMode){
       var m = el('div','chip mode'); m.appendChild(el('span','','Mode gambar'));
@@ -877,7 +878,6 @@ input, textarea{font-size:17.6px!important}
       x.addEventListener('click', function(){ off(); renderChips(); });
       m.appendChild(x); box.appendChild(m);
     }
-    if (locOn) mc(loc ? 'Lokasi aktif' : 'Mencari lokasi...', function(){ locOn = false; });
     if (searchOn) mc('Cari di web', function(){ searchOn = false; });
     pending.forEach(function(a, i){
       var c = el('div','chip');
