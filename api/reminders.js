@@ -103,6 +103,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "create") {
+      if (!device.onesignal_subscription_id) return jsonError(res, 409, "Aktifkan notifikasi EdhyX terlebih dahulu sebelum membuat pengingat.");
       const message = typeof body.message === "string" ? body.message.trim().slice(0, MAX_MESSAGE) : "";
       const scheduledAt = Date.parse(body.scheduledAt || "");
       if (!message) return jsonError(res, 400, "Isi pengingat wajib diisi.");
