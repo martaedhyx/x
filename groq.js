@@ -140,9 +140,27 @@
     var tried = false;
     var webFallbackTried = false;
 
-    /* Semua permintaan web mencoba Tavily lalu Exa terlebih dahulu.
-       Google Search hanya dipanggil jika pencarian sumber utama gagal. */
+    /* Permintaan web: mode Gemini harus langsung ke Google Search.
+       Jangan memanggil Tavily, Exa, atau Groq ketika pengguna memilih "Hanya Gemini". */
     if (isWebRequest(b)) {
+      var googleBody = JSON.parse(JSON.stringify(b));
+      googleBody.tools = [{ google_search:{} }];
+      delete googleBody.toolConfig;
+
+      if (mode() === 'gemini') {
+        var directGoogleResponse = await patchedFetch(u, Object.assign({}, o, {
+          body: JSON.stringify(googleBody)
+        }));
+        if (!directGoogleResponse.ok) {
+          var directErrorData = await directGoogleResponse.clone().json().catch(function(){ return {}; });
+          var directErrorMessage = directErrorData.error && directErrorData.error.message
+            ? directErrorData.error.message : directGoogleResponse.statusText || 'Tidak ada detail dari Google.';
+          throw new Error('Google Gemini API gagal (HTTP ' + directGoogleResponse.status + '): ' + directErrorMessage);
+        }
+        note('Gemini + Google Search');
+        return directGoogleResponse;
+      }
+
       var primaryFailure = null;
       if (canWebQ) {
         try {
@@ -157,18 +175,28 @@
         primaryFailure = new Error('Groq tidak tersedia untuk menyusun hasil Tavily/Exa.');
       }
 
-      var googleBody = JSON.parse(JSON.stringify(b));
-      googleBody.tools = [{ google_search:{} }];
-      delete googleBody.toolConfig;
       try {
         var googleResponse = await patchedFetch(u, Object.assign({}, o, {
           body: JSON.stringify(googleBody)
         }));
+        if (!googleResponse.ok) {
+          var googleErrorData = await googleResponse.clone().json().catch(function(){ return {}; });
+          var googleErrorMessage = googleErrorData.error && googleErrorData.error.message
+            ? googleErrorData.error.message : googleResponse.statusText || 'Tidak ada detail dari Google.';
+          throw new Error('Google Gemini API gagal (HTTP ' + googleResponse.status + '): ' + googleErrorMessage);
+        }
         if (await hasGeminiAnswer(googleResponse) && await hasGeminiSources(googleResponse)) {
           note('Google Search · cadangan');
           return googleResponse;
         }
-        throw new Error('Google Search tidak mengembalikan sumber web.');
+        var diagnosticData = await googleResponse.clone().json().catch(function(){ return {}; });
+        var diagnosticCandidate = diagnosticData.candidates && diagnosticData.candidates[0];
+        var diagnosticGrounding = diagnosticCandidate && diagnosticCandidate.groundingMetadata;
+        var diagnosticChunks = diagnosticGrounding && diagnosticGrounding.groundingChunks || [];
+        var diagnosticQueries = diagnosticGrounding && diagnosticGrounding.webSearchQueries || [];
+        throw new Error('Google Gemini API merespons HTTP 200, tetapi jawaban belum memiliki sumber grounding yang dapat diverifikasi. groundingChunks=' +
+          diagnosticChunks.length + ', webSearchQueries=' + diagnosticQueries.length +
+          ', searchEntryPoint=' + (!!(diagnosticGrounding && diagnosticGrounding.searchEntryPoint)) + '.');
       } catch(googleError) {
         if (o.signal && o.signal.aborted) throw googleError;
         throw new Error('Tavily dan Exa gagal (' + (primaryFailure && primaryFailure.message ? primaryFailure.message : 'tidak diketahui') + '); Google Search sebagai cadangan juga gagal. ' +
