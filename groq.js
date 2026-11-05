@@ -15,7 +15,7 @@
     /* Izinkan alat pencarian web resmi Gemini pada jalur riset Groq.
        Tolak alat lain (mis. Maps) dan konten gambar agar tidak salah dialihkan. */
     if (b.tools && b.tools.some(function(t){
-      return !t.google_search && !t.url_context;
+      return false;
     })) return false;
     return (b.contents || []).every(function(m){
       return (m.parts || []).every(function(p){ return !p.inlineData; });
@@ -72,22 +72,12 @@
       return !!(p && p.some(function(x){ return !x.thought && !!x.text; }));
     } catch(e){ return false; }
   }
-  async function hasGeminiSources(r){
-    if (!r || !r.ok) return false;
-    try {
-      var d = await r.clone().json();
-      var c = d.candidates && d.candidates[0];
-      var chunks = c && c.groundingMetadata && c.groundingMetadata.groundingChunks || [];
-      if (chunks.some(function(x){ var w=x.web || x.maps; return !!(w && /^https?:\/\//i.test(w.uri || '')); })) return true;
-      var parts = c && c.content && c.content.parts || [];
-      return parts.some(function(x){ return !x.thought && /\[[^\]]+\]\(https?:\/\/[^)]+\)/i.test(x.text || ''); });
-    } catch(e){ return false; }
-  }
+
 
   var RESEARCH_API = 'https://xbot-marta-edi.vercel.app/api/research';
 
   function isWebRequest(b){
-    return !!(b.tools && b.tools.some(function(t){ return !!t.google_search; }));
+    return b.edhyx_web_search === true;
   }
   function latestUserQuery(b){
     var a = b.contents || [];
@@ -123,10 +113,11 @@
     var fallbackBody = JSON.parse(JSON.stringify(b));
     delete fallbackBody.tools;
     delete fallbackBody.toolConfig;
+    delete fallbackBody.edhyx_web_search;
     if (!fallbackBody.system_instruction) fallbackBody.system_instruction = { parts:[{ text:'' }] };
     if (!fallbackBody.system_instruction.parts || !fallbackBody.system_instruction.parts.length) fallbackBody.system_instruction.parts = [{ text:'' }];
     fallbackBody.system_instruction.parts[0].text +=
-      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Cantumkan URL langsung artikel dan judulnya. Cantumkan penerbit serta tanggal hanya jika tersedia; jangan mengarang metadata. Jangan gunakan homepage, kategori, tag, hasil pencarian, atau agregator sebagai URL artikel. Jika sumber tidak memiliki isi yang cukup, jangan gunakan sumber tersebut. Jawab dalam bahasa pengguna dan jangan mengaku memakai Google Search/Gemini.\n\nHASIL PENELUSURAN WEB:\n' + context;
+      '\n\nMODE CADANGAN PENELUSURAN WEB EDHY: Gemini gagal menjawab permintaan web. Gunakan hanya hasil penelusuran berikut sebagai dasar fakta. Cantumkan URL langsung artikel dan judulnya. Cantumkan penerbit serta tanggal hanya jika tersedia; jangan mengarang metadata. Jangan gunakan homepage, kategori, tag, hasil pencarian, atau agregator sebagai URL artikel. Jika sumber tidak memiliki isi yang cukup, jangan gunakan sumber tersebut. Jawab dalam bahasa pengguna dan jangan mengaku memakai provider tertentu.\n\nHASIL PENELUSURAN WEB:\n' + context;
     return await groq(fallbackBody, signal);
   }
 
@@ -135,72 +126,21 @@
     var b;
     try { b = JSON.parse(o.body); } catch(e){ return patchedFetch(u, o); }
     var canQ = !!qkey() && mode() !== 'gemini' && textOnly(b);
-    var canWebQ = !!qkey() && mode() !== 'gemini' && isWebRequest(b);
+    var canWebQ = false;
     var preferGroq = mode() === 'groq' && canQ;
     var tried = false;
     var webFallbackTried = false;
 
-    /* Permintaan web: mode Gemini harus langsung ke Google Search.
-       Jangan memanggil Tavily, Exa, atau Groq ketika pengguna memilih "Hanya Gemini". */
+    /* Pencarian web memakai Tavily/Exa, lalu Groq menyusun jawaban bersumber. */
     if (isWebRequest(b)) {
-      var googleBody = JSON.parse(JSON.stringify(b));
-      googleBody.tools = [{ google_search:{} }];
-      delete googleBody.toolConfig;
-
-      if (mode() === 'gemini') {
-        var directGoogleResponse = await patchedFetch(u, Object.assign({}, o, {
-          body: JSON.stringify(googleBody)
-        }));
-        if (!directGoogleResponse.ok) {
-          var directErrorData = await directGoogleResponse.clone().json().catch(function(){ return {}; });
-          var directErrorMessage = directErrorData.error && directErrorData.error.message
-            ? directErrorData.error.message : directGoogleResponse.statusText || 'Tidak ada detail dari Google.';
-          throw new Error('Google Gemini API gagal (HTTP ' + directGoogleResponse.status + '): ' + directErrorMessage);
-        }
-        note('Gemini + Google Search');
-        return directGoogleResponse;
-      }
-
-      var primaryFailure = null;
-      if (canWebQ) {
-        try {
-          var primaryWebAnswer = await groqWebFallback(b, o.signal);
-          note('Tavily / Exa + Groq');
-          return fake(primaryWebAnswer);
-        } catch(e) {
-          if (o.signal && o.signal.aborted) throw e;
-          primaryFailure = e;
-        }
-      } else {
-        primaryFailure = new Error('Groq tidak tersedia untuk menyusun hasil Tavily/Exa.');
-      }
-
       try {
-        var googleResponse = await patchedFetch(u, Object.assign({}, o, {
-          body: JSON.stringify(googleBody)
-        }));
-        if (!googleResponse.ok) {
-          var googleErrorData = await googleResponse.clone().json().catch(function(){ return {}; });
-          var googleErrorMessage = googleErrorData.error && googleErrorData.error.message
-            ? googleErrorData.error.message : googleResponse.statusText || 'Tidak ada detail dari Google.';
-          throw new Error('Google Gemini API gagal (HTTP ' + googleResponse.status + '): ' + googleErrorMessage);
-        }
-        if (await hasGeminiAnswer(googleResponse) && await hasGeminiSources(googleResponse)) {
-          note('Google Search · cadangan');
-          return googleResponse;
-        }
-        var diagnosticData = await googleResponse.clone().json().catch(function(){ return {}; });
-        var diagnosticCandidate = diagnosticData.candidates && diagnosticData.candidates[0];
-        var diagnosticGrounding = diagnosticCandidate && diagnosticCandidate.groundingMetadata;
-        var diagnosticChunks = diagnosticGrounding && diagnosticGrounding.groundingChunks || [];
-        var diagnosticQueries = diagnosticGrounding && diagnosticGrounding.webSearchQueries || [];
-        throw new Error('Google Gemini API merespons HTTP 200, tetapi jawaban belum memiliki sumber grounding yang dapat diverifikasi. groundingChunks=' +
-          diagnosticChunks.length + ', webSearchQueries=' + diagnosticQueries.length +
-          ', searchEntryPoint=' + (!!(diagnosticGrounding && diagnosticGrounding.searchEntryPoint)) + '.');
-      } catch(googleError) {
-        if (o.signal && o.signal.aborted) throw googleError;
-        throw new Error('Tavily dan Exa gagal (' + (primaryFailure && primaryFailure.message ? primaryFailure.message : 'tidak diketahui') + '); Google Search sebagai cadangan juga gagal. ' +
-          (googleError && googleError.message ? googleError.message : 'Coba lagi nanti.'));
+        var webAnswer = await groqWebFallback(b, o.signal);
+        note('Tavily / Exa + Groq');
+        return fake(webAnswer);
+      } catch(e) {
+        if (o.signal && o.signal.aborted) throw e;
+        throw new Error('Pencarian web Tavily/Exa gagal: ' +
+          (e && e.message ? e.message : 'Coba lagi nanti.'));
       }
     }
 
