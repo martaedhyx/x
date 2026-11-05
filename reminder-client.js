@@ -62,7 +62,7 @@
 
   function parseReminder(input) {
     var raw = String(input || "").trim();
-    if (!/(ingatkan|ingetin|pengingat|remind me|buat alarm)/i.test(raw)) return null;
+    if (!/^\\s*(?:tolong\\s+)?(?:ingatkan|ingetin|buat\\s+pengingat|remind\\s+me|buat\\s+alarm)\\b/i.test(raw)) return null;
 
     var d = new Date();
     var dateMatch = raw.match(/\b(besok|lusa|hari ini|tanggal\s+\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)\b/i);
